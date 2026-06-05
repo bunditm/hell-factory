@@ -17,7 +17,7 @@ const OfficeCanvas = dynamic(() => import('./components/OfficeCanvas'), {
 
 export default function Home() {
   return (
-    <main className="h-screen w-screen bg-slate-900 overflow-hidden">
+    <main className="relative w-screen overflow-hidden bg-[#0a0000]" style={{ height: '100vh' }}>
       <OfficeCanvas />
     </main>
   )

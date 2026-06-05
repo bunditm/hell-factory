@@ -23,10 +23,10 @@ export const CAMERA_FOLLOW_SNAP_THRESHOLD = 0.5
 export const FALLBACK_FLOOR_COLOR = '#808080'
 
 // Zoom
-export const ZOOM_MIN = 1
-export const ZOOM_MAX = 10
+export const ZOOM_MIN = 0.5
+export const ZOOM_MAX = 6
 export const ZOOM_SCROLL_THRESHOLD = 50
-export const PAN_MARGIN_FRACTION = 0.25
+export const PAN_MARGIN_FRACTION = 0.1
 
 // Character palettes
 export const PALETTE_COUNT = 6

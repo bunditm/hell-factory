@@ -1,20 +1,21 @@
 'use client'
 
 import { useRef, useEffect, useCallback, useState } from 'react'
-import { TILE_SIZE, DEFAULT_COLS, DEFAULT_ROWS, ZOOM_MIN, ZOOM_MAX } from '../engine/constants'
+import { TILE_SIZE, DEFAULT_COLS, DEFAULT_ROWS, ZOOM_MIN, ZOOM_MAX, ZOOM_SCROLL_THRESHOLD, PAN_MARGIN_FRACTION } from '../engine/constants'
 import { startGameLoop } from '../engine/gameLoop'
-import { renderFrame } from '../engine/renderer'
-import { PAN_MARGIN_FRACTION, ZOOM_SCROLL_THRESHOLD } from '../engine/constants'
+import { renderMockupFrame } from '../engine/mockupRenderer'
+import { MOCKUP_COLS, MOCKUP_ROWS } from '../engine/mockupData'
 
-const ZOOM_DEFAULT = 2
+const ZOOM_DEFAULT = 1
 
 export default function OfficeCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const panRef = useRef({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(ZOOM_DEFAULT)
+  // Force re-mount of game loop when zoom changes (since render closure reads zoom)
+  const [loopKey, setLoopKey] = useState(0)
 
-  // Resize canvas to device pixels
   const resizeCanvas = useCallback(() => {
     const canvas = canvasRef.current
     const container = containerRef.current
@@ -27,12 +28,11 @@ export default function OfficeCanvas() {
     canvas.style.height = `${rect.height}px`
   }, [])
 
-  // Clamp pan so map edge doesn't go past margin
   const clampPan = useCallback((px: number, py: number): { x: number; y: number } => {
     const canvas = canvasRef.current
     if (!canvas) return { x: px, y: py }
-    const mapW = DEFAULT_COLS * TILE_SIZE * zoom
-    const mapH = DEFAULT_ROWS * TILE_SIZE * zoom
+    const mapW = MOCKUP_COLS * TILE_SIZE * zoom
+    const mapH = MOCKUP_ROWS * TILE_SIZE * zoom
     const marginX = canvas.width * PAN_MARGIN_FRACTION
     const marginY = canvas.height * PAN_MARGIN_FRACTION
     const maxPanX = (mapW / 2) + canvas.width / 2 - marginX
@@ -43,71 +43,57 @@ export default function OfficeCanvas() {
     }
   }, [zoom])
 
-  // Pan state for middle-mouse drag
-  const isPanningRef = useRef(false)
-  const panStartRef = useRef({ mouseX: 0, mouseY: 0, panX: 0, panY: 0 })
-
-  // Zoom scroll accumulator
-  const zoomAccumRef = useRef(0)
+  // Re-init the loop whenever zoom changes (so the closure captures fresh zoom)
+  useEffect(() => { setLoopKey(k => k + 1) }, [zoom])
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-
     resizeCanvas()
-
     const observer = new ResizeObserver(() => resizeCanvas())
-    if (containerRef.current) {
-      observer.observe(containerRef.current)
-    }
+    if (containerRef.current) observer.observe(containerRef.current)
 
+    const startTime = performance.now()
     const stop = startGameLoop(canvas, {
       update: (_dt) => {
-        // TODO: Update game state from SSE events
+        // No game state yet — animations are time-based in render
       },
       render: (ctx) => {
-        const w = canvas.width
-        const h = canvas.height
-
-        const { offsetX, offsetY } = renderFrame(
+        renderMockupFrame(
           ctx,
-          w,
-          h,
+          canvas.width,
+          canvas.height,
           zoom,
           panRef.current.x,
           panRef.current.y,
-          DEFAULT_COLS,
-          DEFAULT_ROWS,
+          MOCKUP_COLS,
+          MOCKUP_ROWS,
+          (performance.now() - startTime) / 1000,
         )
       },
     })
 
-    // Initial center pan
-    const initialPan = clampPan(0, 0)
-    panRef.current = initialPan
+    // Initial center: pan = 0 already centers map in viewport
+    panRef.current = clampPan(0, 0)
 
-    return () => {
-      stop()
-      observer.disconnect()
-    }
-  }, [resizeCanvas, clampPan])
+    return () => { stop(); observer.disconnect() }
+  }, [resizeCanvas, clampPan, zoom, loopKey])
 
-  // Mouse wheel zoom
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault()
-    zoomAccumRef.current += e.deltaY
-    if (zoomAccumRef.current > ZOOM_SCROLL_THRESHOLD) {
-      zoomAccumRef.current = 0
+    if (e.deltaY > 0) {
       setZoom(z => Math.max(ZOOM_MIN, z - 1))
-    } else if (zoomAccumRef.current < -ZOOM_SCROLL_THRESHOLD) {
-      zoomAccumRef.current = 0
+    } else {
       setZoom(z => Math.min(ZOOM_MAX, z + 1))
     }
   }, [])
 
-  // Middle-mouse pan
+  // Pan state for drag (left mouse) + middle-mouse
+  const isPanningRef = useRef(false)
+  const panStartRef = useRef({ mouseX: 0, mouseY: 0, panX: 0, panY: 0 })
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 1) { // Middle mouse
+    if (e.button === 1 || e.button === 0) {
       e.preventDefault()
       isPanningRef.current = true
       panStartRef.current = {
@@ -136,7 +122,7 @@ export default function OfficeCanvas() {
   return (
     <div
       ref={containerRef}
-      className="w-full h-full"
+      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
@@ -145,8 +131,8 @@ export default function OfficeCanvas() {
     >
       <canvas
         ref={canvasRef}
-        className="block cursor-grab active:cursor-grabbing"
-        style={{ imageRendering: 'pixelated' }}
+        className="block"
+        style={{ imageRendering: 'pixelated', cursor: 'grab' }}
       />
     </div>
   )
