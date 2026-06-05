@@ -73,6 +73,10 @@ Hell Factory is a web-based virtual office that visualizes Hermes Agent team act
 | V2 | Office editor + speech bubbles + sub-agents | 📋 Planned |
 | V3 | Multi-office support + session history | 📋 Future |
 
+## Rendering Specification
+
+Visual details (palette, sprites, animations, lava effects) are in [HELL-RENDERING-SPEC.md](./HELL-RENDERING-SPEC.md).
+
 ## Open Questions
 
 - [ ] How does Hermes plugin detect agent state? (memory, tool hooks, session files?)

@@ -28,16 +28,16 @@ hell-factory/
 │   │   │   └── OfficeCanvas.tsx      # Canvas game component
 │   │   │
 │   │   ├── engine/
-│   │   │   ├── types.ts              # Shared types (OfficeLayout, Character, etc.)
-│   │   │   ├── constants.ts          # Magic numbers (TILE_SIZE, WALK_SPEED, etc.)
-│   │   │   ├── gameLoop.ts           # RAF game loop
-│   │   │   ├── officeState.ts        # Office state management (characters, seats, furniture)
-│   │   │   ├── characters.ts         # Character entity + state machine
-│   │   │   ├── renderer.ts           # Canvas render pipeline
-│   │   │   ├── pathfinding.ts        # BFS pathfinding
-│   │   │   ├── sprites.ts            # Character sprite definitions (SpriteData)
-│   │   │   ├── assets.ts             # Furniture/floor sprites
-│   │   │   └── layoutUtils.ts        # Layout serialization/deserialization
+│   │   │   ├── types.ts              # Shared types (OfficeLayout, Character, HermesAgentStatus)
+│   │   │   ├── constants.ts          # Magic numbers (TILE_SIZE, WALK_SPEED, etc.) ✅
+│   │   │   ├── gameLoop.ts           # RAF game loop ✅
+│   │   │   ├── officeState.ts        # Office state management — ❌ MISSING
+│   │   │   ├── characters.ts         # Character entity + state machine — ❌ MISSING
+│   │   │   ├── renderer.ts           # Canvas render pipeline ✅
+│   │   │   ├── pathfinding.ts        # BFS pathfinding — ❌ MISSING
+│   │   │   ├── sprites.ts            # Character sprite definitions ✅ (placeholder)
+│   │   │   ├── assets.ts             # Furniture/floor sprites — ❌ MISSING
+│   │   │   └── layoutUtils.ts        # Layout serialization/deserialization — ❌ MISSING
 │   │   │
 │   │   ├── lib/
 │   │   │   └── sseClient.ts          # SSE connection + event handlers
@@ -222,6 +222,7 @@ No external canvas/sprite libraries — pure Canvas 2D API.
 
 ## Related Documents
 
-- [Breakdown & Design →](04-breakdown.md)
-- [Architecture Design →](03-architecture.md)
-- [PRD →](02-prd.md)
+- [Rendering Spec (visual layer) →](./HELL-RENDERING-SPEC.md)
+- [Breakdown & Design →](./04-breakdown.md)
+- [Architecture Design →](./03-architecture.md)
+- [PRD →](./02-prd.md)
