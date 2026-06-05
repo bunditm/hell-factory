@@ -16,10 +16,9 @@ export default function OfficeCanvas() {
     const container = containerRef.current
     if (!canvas || !container) return
     const rect = container.getBoundingClientRect()
-    const dpr = window.devicePixelRatio || 1
-    // 1600x1200 internal resolution, scaled to fit container
+    // 1600x900 internal resolution, scales to fit container (16:9 widescreen)
     const targetW = 1600
-    const targetH = 1200
+    const targetH = 900
     canvas.width = targetW
     canvas.height = targetH
     const scale = Math.min(rect.width / targetW, rect.height / targetH)
@@ -76,7 +75,7 @@ export default function OfficeCanvas() {
     <div ref={containerRef} className="absolute inset-0 flex items-center justify-center bg-[#0a0000]" style={{ minHeight: '100vh' }}>
       <canvas
         ref={canvasRef}
-        style={{ imageRendering: 'pixelated', width: 'min(100vw, 177.78vh)', height: 'min(100vh, 56.25vw)', maxWidth: '100%', maxHeight: '100%' }}
+        style={{ imageRendering: 'pixelated', width: 'min(100vw, 177.78vh)', height: 'min(56.25vw, 100vh)', maxWidth: '100%', maxHeight: '100%' }}
         className="block"
       />
     </div>

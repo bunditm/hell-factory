@@ -3,9 +3,9 @@
 
 import { IMP_SPRITES, TILE_SETS } from './assets'
 
-// Canvas: 1600x1200, 16x12 tile grid, 100px tiles (with 64x64 PNGs centered + 18px decoration gap)
+// Canvas: 1600x900, 16x9 tile grid, 100px tiles
 export const V4_COLS = 16
-export const V4_ROWS = 12
+export const V4_ROWS = 9
 export const V4_TILE = 100
 
 // Per-room theme (Claw-Empire style: floor1/floor2/wall/accent)
@@ -73,12 +73,12 @@ export const ROOM_THEMES: Record<string, RoomTheme> = {
   },
 }
 
-// 5 rooms laid out in the 16x12 grid
-// Layout (rough):
-//   Row 0-1:  Catacombs hallway across top (cols 0-15)
-//   Row 2-5:  War Room (cols 0-7)  |  Lounge (cols 8-15)
-//   Row 6-7:  Catacombs hall (cols 0-15)
-//   Row 8-11: Pit (cols 0-7)       |  Depths (cols 8-15)
+// 5 rooms laid out in the 16x9 grid
+// Layout:
+//   Row 0:     Catacombs hallway across top (cols 0-15)
+//   Row 1-4:   War Room (cols 0-7)  |  Lounge (cols 8-15)
+//   Row 5:     Catacombs hall (cols 0-15)
+//   Row 6-8:   Pit (cols 0-7)       |  Depths (cols 8-15)
 //
 // All room rectangles (col, row, w, h in tiles):
 export interface RoomRect {
@@ -92,11 +92,11 @@ export interface RoomRect {
 
 export const ROOMS: RoomRect[] = [
   { id: 'catacombs-top',  theme: ROOM_THEMES['catacombs'], col: 0,  row: 0,  cols: 16, rows: 1 },
-  { id: 'war-room',        theme: ROOM_THEMES['war-room'],  col: 0,  row: 2,  cols: 8,  rows: 4 },
-  { id: 'lounge',          theme: ROOM_THEMES['lounge'],    col: 8,  row: 2,  cols: 8,  rows: 4 },
-  { id: 'catacombs-mid',   theme: ROOM_THEMES['catacombs'], col: 0,  row: 6,  cols: 16, rows: 1 },
-  { id: 'pit',             theme: ROOM_THEMES['pit'],       col: 0,  row: 7,  cols: 8,  rows: 5 },
-  { id: 'depths',          theme: ROOM_THEMES['depths'],    col: 8,  row: 7,  cols: 8,  rows: 5 },
+  { id: 'war-room',        theme: ROOM_THEMES['war-room'],  col: 0,  row: 1,  cols: 8,  rows: 4 },
+  { id: 'lounge',          theme: ROOM_THEMES['lounge'],    col: 8,  row: 1,  cols: 8,  rows: 4 },
+  { id: 'catacombs-mid',   theme: ROOM_THEMES['catacombs'], col: 0,  row: 5,  cols: 16, rows: 1 },
+  { id: 'pit',             theme: ROOM_THEMES['pit'],       col: 0,  row: 6,  cols: 8,  rows: 3 },
+  { id: 'depths',          theme: ROOM_THEMES['depths'],    col: 8,  row: 6,  cols: 8,  rows: 3 },
 ]
 
 // Characters — named, swap-friendly via IMP_SPRITES key
@@ -114,19 +114,19 @@ export interface OfficeCharacter {
 
 export const CHARACTERS: OfficeCharacter[] = [
   // War Room — Hermes (the boss)
-  { id: 'hermes', name: 'Hermes',   role: 'CEO',      spriteKey: 'hermes',       roomId: 'war-room', seatCol: 4, seatRow: 2, state: 'working', bubble: 'You there! Get to work!' },
+  { id: 'hermes', name: 'Hermes',   role: 'CEO',      spriteKey: 'hermes',       roomId: 'war-room', seatCol: 3, seatRow: 2, state: 'working', bubble: 'You there! Get to work!' },
 
   // The Pit — frontend + backend (working)
-  { id: 'rian',   name: 'Rian',     role: 'frontend-dev', spriteKey: 'frontend-dev', roomId: 'pit',    seatCol: 1, seatRow: 2, state: 'working', bubble: null },
-  { id: 'clio',   name: 'Clio',     role: 'backend-dev',  spriteKey: 'backend-dev',  roomId: 'pit',    seatCol: 3, seatRow: 2, state: 'working', bubble: 'CRUD again' },
-  { id: 'sage',   name: 'Sage',     role: 'devops',       spriteKey: 'devops',       roomId: 'pit',    seatCol: 5, seatRow: 2, state: 'waiting', bubble: 'Waiting on deploy approval...' },
+  { id: 'rian',   name: 'Rian',     role: 'frontend-dev', spriteKey: 'frontend-dev', roomId: 'pit',    seatCol: 1, seatRow: 1, state: 'working', bubble: null },
+  { id: 'clio',   name: 'Clio',     role: 'backend-dev',  spriteKey: 'backend-dev',  roomId: 'pit',    seatCol: 3, seatRow: 1, state: 'working', bubble: 'CRUD again' },
+  { id: 'sage',   name: 'Sage',     role: 'devops',       spriteKey: 'devops',       roomId: 'pit',    seatCol: 5, seatRow: 1, state: 'waiting', bubble: 'Waiting on deploy approval...' },
 
   // Lounge — QA + extra
-  { id: 'hawk',   name: 'Hawk',     role: 'qa-engineer',  spriteKey: 'qa-engineer',  roomId: 'lounge', seatCol: 1, seatRow: 1, state: 'idle',    bubble: 'Bug hunting.' },
-  { id: 'bolt',   name: 'Bolt',     role: 'frontend-dev', spriteKey: 'frontend-dev', roomId: 'lounge', seatCol: 3, seatRow: 1, state: 'idle',    bubble: 'Coffee?' },
+  { id: 'hawk',   name: 'Hawk',     role: 'qa-engineer',  spriteKey: 'qa-engineer',  roomId: 'lounge', seatCol: 2, seatRow: 2, state: 'idle',    bubble: 'Bug hunting.' },
+  { id: 'bolt',   name: 'Bolt',     role: 'frontend-dev', spriteKey: 'frontend-dev', roomId: 'lounge', seatCol: 5, seatRow: 2, state: 'idle',    bubble: 'Coffee?' },
 
   // Depths — break room
-  { id: 'mira',   name: 'Mira',     role: 'frontend-dev', spriteKey: 'frontend-dev', roomId: 'depths', seatCol: 2, seatRow: 2, state: 'idle',    bubble: 'Any weekend plans?' },
+  { id: 'mira',   name: 'Mira',     role: 'frontend-dev', spriteKey: 'frontend-dev', roomId: 'depths', seatCol: 3, seatRow: 1, state: 'idle',    bubble: 'Any weekend plans?' },
 ]
 
 // Furniture — placed per room (col, row in room-local coordinates)

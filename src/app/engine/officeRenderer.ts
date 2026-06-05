@@ -1,12 +1,7 @@
 // Office renderer v4 — uses real PNG sprites from public/
 // Replaces the hand-authored pixelArt.ts / sprites/* / mockupRenderer.ts
 
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from './constants'
-import {
-  loadSpriteSheet, drawFrame, drawFrameImage, recolorImage,
-  IMP_SPRITES, TILE_SETS,
-  type SpriteSheet, type Frame,
-} from './assets'
+import { loadSpriteSheet, drawFrame, drawFrameImage, recolorImage, IMP_SPRITES, TILE_SETS, type SpriteSheet, type Frame, } from './assets'
 import {
   V4_COLS, V4_ROWS, V4_TILE,
   ROOMS, CHARACTERS, FURNITURE,
@@ -166,7 +161,7 @@ function drawRoom(ctx: CanvasRenderingContext2D, room: RoomRect, time: number): 
   ctx.fillStyle = wallGrad
   ctx.fillRect(px, py, w, h)
 
-  // Floor tiles (checkerboard of floorTile + floorAlt)
+  // Floor tiles (checkerboard of floorTile + floorAlt, fills the whole cell)
   const floorSheet = tileSheets[theme.floorTileSet]
   if (floorSheet) {
     for (let r = 0; r < rows; r++) {
@@ -175,24 +170,25 @@ function drawRoom(ctx: CanvasRenderingContext2D, room: RoomRect, time: number): 
         const tile = useAlt ? theme.floorAlt : theme.floorTile
         const x = px + c * V4_TILE
         const y = py + r * V4_TILE
+        // Fill the entire 100x100 cell (no gap)
         drawFrame(ctx, floorSheet, tile.col, tile.row,
-          x + 18, y + 18, V4_TILE - 36, V4_TILE - 36)
+          x, y, V4_TILE, V4_TILE)
       }
     }
   }
 
-  // Wall trim (top + bottom strip)
+  // Wall trim (top + bottom strip — full width, no gap)
   const wallSheet = tileSheets[theme.wallTileSet]
   if (wallSheet) {
     // Top wall
     for (let c = 0; c < cols; c++) {
       drawFrame(ctx, wallSheet, theme.wallTile.col, theme.wallTile.row,
-        px + c * V4_TILE + 18, py + 0, V4_TILE - 36, 16)
+        px + c * V4_TILE, py + 0, V4_TILE, 16)
     }
     // Bottom wall
     for (let c = 0; c < cols; c++) {
       drawFrame(ctx, wallSheet, theme.wallTile.col, theme.wallTile.row,
-        px + c * V4_TILE + 18, py + h - 16, V4_TILE - 36, 16)
+        px + c * V4_TILE, py + h - 16, V4_TILE, 16)
     }
   }
 
