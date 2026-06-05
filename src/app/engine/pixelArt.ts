@@ -424,19 +424,335 @@ export const SPRITE_QA: SpriteData = makeCharacterSprite(
   false, false,
 )
 
-export function getAgentSprite(profile: string): SpriteData {
-  switch (profile) {
-    case 'hermes': return SPRITE_HERMES
-    case 'frontend-eng': return SPRITE_FRONTEND
-    case 'backend-eng': return SPRITE_BACKEND
-    case 'ops': return SPRITE_DEVOPS
-    case 'qa': return SPRITE_QA
-    default: return SPRITE_FRONTEND
+// === AGENT PALETTES (T20 - 5 profiles) ===
+// Each palette defines colors for: armorMain, armorDark, armorLight, helmet, cape, eyes
+export const AGENT_PALETTES = [
+  { // Palette 0: Hermes - gold and red
+    armorMain: HELL_FIRE.goldMid,
+    armorDark: HELL_FIRE.goldDark,
+    armorLight: HELL_FIRE.goldBright,
+    helmet: HELL_FIRE.goldMid,
+    cape: HELL_FIRE.redFire,
+    eyes: HELL_FIRE.lavaGlow,
+    crown: true,
+    capeVisible: true,
+  },
+  { // Palette 1: Frontend Eng - orange/lava theme
+    armorMain: HELL_FIRE.lavaHot,
+    armorDark: HELL_FIRE.lavaDeep,
+    armorLight: HELL_FIRE.lavaGlow,
+    helmet: HELL_FIRE.lavaBright,
+    cape: HELL_FIRE.lavaMid,
+    eyes: HELL_FIRE.lavaWhite,
+    crown: false,
+    capeVisible: false,
+  },
+  { // Palette 2: Backend Eng - brown leather/iron theme
+    armorMain: HELL_FIRE.cloth,
+    armorDark: HELL_FIRE.stoneDark,
+    armorLight: HELL_FIRE.clothLite,
+    helmet: HELL_FIRE.stoneMid,
+    cape: HELL_FIRE.redMid,
+    eyes: HELL_FIRE.lavaGlow,
+    crown: false,
+    capeVisible: true,
+  },
+  { // Palette 3: DevOps - gray plate armor
+    armorMain: HELL_FIRE.smokeMid,
+    armorDark: HELL_FIRE.smokeDark,
+    armorLight: HELL_FIRE.smokeLite,
+    helmet: HELL_FIRE.stoneLite,
+    cape: null,
+    eyes: HELL_FIRE.lavaYellow,
+    crown: false,
+    capeVisible: false,
+  },
+  { // Palette 4: QA - bronze armor
+    armorMain: HELL_FIRE.goldDark,
+    armorDark: HELL_FIRE.barkDark,
+    armorLight: HELL_FIRE.goldMid,
+    helmet: HELL_FIRE.goldMid,
+    cape: null,
+    eyes: HELL_FIRE.lavaGlow,
+    crown: false,
+    capeVisible: false,
+  },
+] as const
+
+// === CHIBI TOP-DOWN CHARACTER SPRITES (T15) ===
+// 16x24 base, chibi proportions: larger head, smaller body
+// 4 directions: down(0), right(1), up(2), left(3)
+
+// Helper to create a chibi top-down character sprite
+function makeChibiSprite(
+  palette: typeof AGENT_PALETTES[number],
+  facing: 0 | 1 | 2 | 3,
+  walkFrame: 0 | 1 | 2 | 3,
+  typingFrame: 0 | 1,
+  isWorking: boolean,
+): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 24; i++) s.push(Array(16).fill(_))
+
+  const { armorMain, armorDark, armorLight, helmet, cape, eyes, crown, capeVisible } = palette
+  const _cape = capeVisible ? cape : null
+
+  // === LEGS (rows 18-23, walk animation) ===
+  // Top-down view: legs visible from above, moving left/right for walk cycle
+  const legPositions: Record<number, {leftX: number, rightX: number}> = {
+    0: { leftX: 6, rightX: 10 },  // Frame 0: together
+    1: { leftX: 5, rightX: 11 },  // Frame 1: left forward
+    2: { leftX: 6, rightX: 10 },  // Frame 2: together
+    3: { leftX: 7, rightX: 9 },   // Frame 3: right forward
+  }
+  const legPos = legPositions[walkFrame]
+  
+  // Left leg
+  for (let y = 18; y <= 22; y++) {
+    s[y][legPos.leftX - 1] = armorDark
+    s[y][legPos.leftX] = armorMain
+    s[y][legPos.leftX + 1] = armorDark
+  }
+  // Right leg
+  for (let y = 18; y <= 22; y++) {
+    s[y][legPos.rightX - 1] = armorDark
+    s[y][legPos.rightX] = armorMain
+    s[y][legPos.rightX + 1] = armorDark
+  }
+  // Feet (boots)
+  s[23][legPos.leftX - 1] = armorDark
+  s[23][legPos.leftX] = HELL_FIRE.stoneMid
+  s[23][legPos.leftX + 1] = armorDark
+  s[23][legPos.rightX - 1] = armorDark
+  s[23][legPos.rightX] = HELL_FIRE.stoneMid
+  s[23][legPos.rightX + 1] = armorDark
+
+  // === CAPE (behind body, rows 12-19) ===
+  if (_cape) {
+    for (let y = 12; y <= 19; y++) {
+      s[y][3] = _cape
+      s[y][12] = _cape
+    }
+  }
+
+  // === BODY/TORSO (rows 10-17, chibi proportions) ===
+  // Shoulder armor (wider for chibi effect)
+  for (let x = 4; x <= 11; x++) {
+    s[10][x] = (x === 4 || x === 11) ? armorLight : armorMain
+  }
+  // Body armor
+  for (let y = 11; y <= 17; y++) {
+    for (let x = 5; x <= 10; x++) {
+      if (x === 5 || x === 10) s[y][x] = armorDark
+      else s[y][x] = armorMain
+    }
+  }
+  // Chest emblem (glowing)
+  s[13][7] = HELL_FIRE.lavaGlow
+  s[13][8] = HELL_FIRE.lavaGlow
+  s[14][7] = HELL_FIRE.lavaHot
+  s[14][8] = HELL_FIRE.lavaHot
+  
+  // === ARMS (rows 11-16, typing animation) ===
+  if (isWorking) {
+    // Typing animation: arms moving toward desk
+    if (typingFrame === 0) {
+      // Frame 0: arms at sides
+      s[12][4] = armorDark; s[12][5] = armorMain
+      s[12][10] = armorMain; s[12][11] = armorDark
+      s[13][4] = armorMain; s[13][5] = armorLight
+      s[13][10] = armorLight; s[13][11] = armorMain
+      s[14][4] = armorMain; s[14][5] = armorDark
+      s[14][10] = armorDark; s[14][11] = armorMain
+    } else {
+      // Frame 1: arms extended forward (typing pose)
+      s[12][3] = armorDark; s[12][4] = armorMain; s[12][5] = armorMain; s[12][6] = armorDark
+      s[12][9] = armorDark; s[12][10] = armorMain; s[12][11] = armorMain; s[12][12] = armorDark
+      s[13][3] = armorMain; s[13][4] = armorLight; s[13][5] = armorLight; s[13][6] = armorMain
+      s[13][9] = armorMain; s[13][10] = armorLight; s[13][11] = armorLight; s[13][12] = armorMain
+      s[14][4] = armorMain; s[14][5] = armorDark; s[14][10] = armorDark; s[14][11] = armorMain
+    }
+  } else {
+    // Idle: arms at sides
+    s[12][4] = armorDark; s[12][5] = armorMain
+    s[12][10] = armorMain; s[12][11] = armorDark
+    s[13][4] = armorMain; s[13][5] = armorLight
+    s[13][10] = armorLight; s[13][11] = armorMain
+    s[14][4] = armorMain; s[14][5] = armorDark
+    s[14][10] = armorDark; s[14][11] = armorMain
+  }
+
+  // === HEAD/HELMET (rows 2-9, chibi: larger head) ===
+  // Top-down view: circular/oval head shape
+  const headCenter = 8
+  const headRadius = 3.5
+ 
+  // Base helmet shape
+  for (let y = 2; y <= 8; y++) {
+    for (let x = 5; x <= 10; x++) {
+      const dy = y - 5
+      const dx = x - headCenter
+      const dist = Math.sqrt(dx*dx + dy*dy)
+      
+      if (dist <= headRadius) {
+        // Edges are darker
+        if (dist > headRadius - 1) {
+          s[y][x] = armorDark
+        } else {
+          s[y][x] = helmet
+        }
+      }
+    }
+  }
+
+  // Crown for Hermes (rows 0-2)
+  if (crown) {
+    s[0][7] = armorLight; s[0][8] = armorLight
+    s[1][6] = armorMain; s[1][7] = armorLight; s[1][8] = armorLight; s[1][9] = armorMain
+    s[2][5] = armorDark; s[2][6] = armorMain; s[2][9] = armorMain; s[2][10] = armorDark
+  }
+
+  // Face (rows 4-7, skin visible through visor)
+  // Top-down face: eyes visible as dots
+  const skin = HELL_FIRE.bone
+  s[5][6] = skin
+  s[5][7] = skin
+  s[5][8] = skin
+  s[5][9] = skin
+  s[6][6] = skin
+  s[6][7] = skin
+  s[6][8] = skin
+  s[6][9] = skin
+  s[7][7] = HELL_FIRE.redDark  // mouth line
+  s[7][8] = HELL_FIRE.redDark
+
+  // Eyes (glowing, visible from above)
+  s[5][7] = eyes
+  s[5][8] = eyes
+ 
+  // Helmet visor rim
+  s[4][6] = armorDark
+  s[4][7] = armorDark
+  s[4][8] = armorDark
+  s[4][9] = armorDark
+ 
+  // Shadow at bottom
+  for (let x = 5; x <= 10; x++) {
+    s[8][x] = armorDark
+  }
+
+  // Neck (row 9)
+  s[9][7] = skin
+  s[9][8] = skin
+
+  return s
+}
+
+// === SPRITE ANIMATION FRAMES ===
+// Structure: [profile][facing][animationType][frame]
+// animationType: 0=idle, 1=walk, 2=typing
+// walk: 4 frames (0-3)
+// typing: 2 frames (0-1)
+// idle: 1 frame (0)
+
+export type AnimationType = 'idle' | 'walk' | 'typing'
+
+// Generate all animation frames for all profiles and directions
+const ANIMATION_FRAMES: SpriteData[][][][] = []
+
+for (let p = 0; p < 5; p++) {
+  ANIMATION_FRAMES[p] = []
+  for (let facing = 0; facing < 4; facing++) {
+    ANIMATION_FRAMES[p][facing] = []
+    
+    // Idle frame (stance, legs together)
+    ANIMATION_FRAMES[p][facing][0] = [
+      makeChibiSprite(AGENT_PALETTES[p], facing as 0|1|2|3, 0, 0, false)
+    ]
+    
+    // Walk frames (4 frames)
+    ANIMATION_FRAMES[p][facing][1] = [
+      makeChibiSprite(AGENT_PALETTES[p], facing as 0|1|2|3, 0, 0, false),
+      makeChibiSprite(AGENT_PALETTES[p], facing as 0|1|2|3, 1, 0, false),
+      makeChibiSprite(AGENT_PALETTES[p], facing as 0|1|2|3, 2, 0, false),
+      makeChibiSprite(AGENT_PALETTES[p], facing as 0|1|2|3, 3, 0, false),
+    ]
+    
+    // Typing frames (2 frames)
+    ANIMATION_FRAMES[p][facing][2] = [
+      makeChibiSprite(AGENT_PALETTES[p], facing as 0|1|2|3, 0, 0, true),
+      makeChibiSprite(AGENT_PALETTES[p], facing as 0|1|2|3, 0, 1, true),
+    ]
   }
 }
 
-// === FURNITURE (refined v2) ===
+// Map profile names to palette indices
+const PROFILE_TO_PALETTE: Record<string, number> = {
+  'hermes': 0,
+  'frontend-eng': 1,
+  'backend-eng': 2,
+  'ops': 3,
+  'qa': 4,
+}
 
+// Updated getAgentSprite function (T15-T20)
+// Parameters:
+//   profile: agent profile name
+//   palette: palette index (0-4) - if not provided, derived from profile
+//   facing: direction (0=down, 1=right, 2=up, 3=left)
+//   animationFrame: frame index (varies by animation type)
+//   animationType: 'idle' | 'walk' | 'typing'
+export function getAgentSprite(
+  profile: string,
+  palette?: number,
+  facing: 0 | 1 | 2 | 3 = 0,
+  animationFrame: number = 0,
+  animationType: AnimationType = 'idle',
+): SpriteData {
+  // Get palette index
+  const paletteIdx = palette !== undefined ? palette : PROFILE_TO_PALETTE[profile] ?? 0
+ 
+  // Clamp values to valid ranges
+  const safePalette = Math.max(0, Math.min(4, paletteIdx))
+  const safeFacing = (facing % 4) as 0 | 1 | 2 | 3
+  
+  // Map animation type to index
+  let animTypeIdx = 0
+  let numFrames = 1
+  if (animationType === 'walk') {
+    animTypeIdx = 1
+    numFrames = 4
+  } else if (animationType === 'typing') {
+    animTypeIdx = 2
+    numFrames = 2
+  }
+  
+  // Get frame index (wrap around)
+  const frameIdx = animationFrame % numFrames
+ 
+  return ANIMATION_FRAMES[safePalette][safeFacing][animTypeIdx][frameIdx]
+}
+
+// Convenience function: get animation frame based on agent state
+export function getAgentAnimationFrame(
+  state: 'idle' | 'working' | 'waiting_approval' | 'barking',
+  time: number,
+): { frame: number; type: AnimationType } {
+  switch (state) {
+    case 'working':
+      // Typing animation: 2 frames, toggles every 0.3 seconds
+      const typingFrame = Math.floor(time * 3.33) % 2
+      return { frame: typingFrame, type: 'typing' }
+    case 'idle':
+      return { frame: 0, type: 'idle' }
+    case 'waiting_approval':
+      return { frame: 0, type: 'idle' }
+    case 'barking':
+      return { frame: 0, type: 'idle' }
+    default:
+      return { frame: 0, type: 'idle' }
+  }
+}
 // Stone desk (16x16) — cobblestone with lava inlay
 function makeDesk(): SpriteData {
   const s: SpriteData = []
@@ -603,18 +919,346 @@ function makeTorch(): SpriteData {
 export const FURNITURE_TORCH: SpriteData = makeTorch()
 
 // === TILES ===
+
+// === NEW FURNITURE SPRITES T7-T14 ===
+
+// === FLOOR TILE VARIANTS (16x16) ===
+
+// Wood planks - horizontal planks with grain, brown tones
+export const TILE_WOOD_PLANKS: SpriteData = (() => {
+  const sprite: SpriteData = []
+  for (let y = 0; y < 16; y++) {
+    const row: string[] = []
+    for (let x = 0; x < 16; x++) {
+      row.push(HELL_FIRE.barkMid)
+    }
+    sprite.push(row)
+  }
+  // Horizontal planks (4px tall each)
+  const plankColors = [
+    HELL_FIRE.barkDark, HELL_FIRE.barkMid, HELL_FIRE.barkMid, HELL_FIRE.barkDark
+  ]
+  for (let y = 0; y < 16; y++) {
+    const plankRow = Math.floor(y / 4)
+    const baseColor = plankColors[plankRow % plankColors.length]
+    for (let x = 0; x < 16; x++) {
+      // Add grain lines (vertical streaks)
+      const grain = (x * 7 + y * 3) % 13
+      if (grain < 2) {
+        sprite[y][x] = HELL_FIRE.leafDark
+      } else if (grain < 4) {
+        sprite[y][x] = HELL_FIRE.barkDark
+      } else if (grain < 6) {
+        sprite[y][x] = HELL_FIRE.cloth
+      } else {
+        sprite[y][x] = baseColor
+      }
+    }
+    // Mortar line between planks
+    if (y % 4 === 0) {
+      for (let x = 0; x < 16; x++) {
+        sprite[y][x] = HELL_FIRE.black
+      }
+    }
+  }
+  return sprite
+})()
+
+// Stone tile - polished stone squares, gray/cream tones
+export const TILE_STONE_TILE: SpriteData = (() => {
+  const sprite: SpriteData = []
+  for (let y = 0; y < 16; y++) {
+    const row: string[] = []
+    for (let x = 0; x < 16; x++) {
+      row.push(HELL_FIRE.stoneMid)
+    }
+    sprite.push(row)
+  }
+  // 8x8 stone tiles
+  const tileColors = [
+    HELL_FIRE.stoneMid, HELL_FIRE.stoneLite,
+    HELL_FIRE.stoneLite, HELL_FIRE.stoneMid
+  ]
+  for (let y = 0; y < 16; y++) {
+    const tileY = Math.floor(y / 8)
+    for (let x = 0; x < 16; x++) {
+      const tileX = Math.floor(x / 8)
+      const tileIdx = tileY * 2 + tileX
+      const baseColor = tileColors[tileIdx % tileColors.length]
+      // Add polish shine
+      const shine = (x * 3 + y * 5) % 7
+      if (shine < 2) {
+        sprite[y][x] = HELL_FIRE.stoneHigh
+      } else if (shine < 4) {
+        sprite[y][x] = baseColor
+      } else {
+        sprite[y][x] = HELL_FIRE.stoneMid
+      }
+    }
+    // Grout line
+    if (y % 8 === 0) {
+      for (let x = 0; x < 16; x++) {
+        sprite[y][x] = HELL_FIRE.stoneDark
+      }
+    }
+  }
+  // Vertical grout
+  for (let y = 0; y < 16; y++) {
+    if (y % 8 !== 0) {
+      sprite[y][8] = HELL_FIRE.stoneDark
+    }
+  }
+  return sprite
+})()
+
+// Carpet red - velvet texture, deep red
+export const TILE_CARPET_RED: SpriteData = (() => {
+  const sprite: SpriteData = []
+  for (let y = 0; y < 16; y++) {
+    const row: string[] = []
+    for (let x = 0; x < 16; x++) {
+      row.push(HELL_FIRE.redMid)
+    }
+    sprite.push(row)
+  }
+  // Velvet texture - soft noise
+  for (let y = 0; y < 16; y++) {
+    for (let x = 0; x < 16; x++) {
+      const noise = (x * 11 + y * 7) % 5
+      if (noise === 0) sprite[y][x] = HELL_FIRE.redDark
+      else if (noise === 1) sprite[y][x] = HELL_FIRE.redBright
+      else sprite[y][x] = HELL_FIRE.redFire
+    }
+  }
+  return sprite
+})()
+
+// Carpet blue - office carpet texture, blue tones
+export const TILE_CARPET_BLUE: SpriteData = (() => {
+  const sprite: SpriteData = []
+  for (let y = 0; y < 16; y++) {
+    const row: string[] = []
+    for (let x = 0; x < 16; x++) {
+      row.push(HELL_FIRE.stoneLite)
+    }
+    sprite.push(row)
+  }
+  // Office carpet texture - tighter pattern
+  for (let y = 0; y < 16; y++) {
+    for (let x = 0; x < 16; x++) {
+      const noise = (x * 13 + y * 9) % 4
+      if (noise === 0) sprite[y][x] = HELL_FIRE.stoneDark
+      else if (noise === 1) sprite[y][x] = HELL_FIRE.stoneMid
+      else sprite[y][x] = HELL_FIRE.stoneLite
+    }
+  }
+  return sprite
+})()
+
+// Carpet purple - lounge carpet texture, purple tones (using red+cloth mix)
+export const TILE_CARPET_PURPLE: SpriteData = (() => {
+  const sprite: SpriteData = []
+  for (let y = 0; y < 16; y++) {
+    const row: string[] = []
+    for (let x = 0; x < 16; x++) {
+      row.push(HELL_FIRE.clothLite)
+    }
+    sprite.push(row)
+  }
+  // Lounge carpet - plush texture
+  for (let y = 0; y < 16; y++) {
+    for (let x = 0; x < 16; x++) {
+      const noise = (x * 7 + y * 11) % 5
+      if (noise === 0) sprite[y][x] = HELL_FIRE.cloth
+      else if (noise === 1) sprite[y][x] = HELL_FIRE.redBright
+      else if (noise === 2) sprite[y][x] = HELL_FIRE.redMid
+      else sprite[y][x] = HELL_FIRE.clothLite
+    }
+  }
+  return sprite
+})()
+
 export const FLOOR_TILES: Record<string, SpriteData> = {
   cobble: TILE_COBBLE,
+  wood_planks: TILE_WOOD_PLANKS,
+  stone_tile: TILE_STONE_TILE,
+  carpet_red: TILE_CARPET_RED,
+  carpet_blue: TILE_CARPET_BLUE,
+  carpet_purple: TILE_CARPET_PURPLE,
 }
-export function getFloorTile(_type: string): SpriteData {
-  return TILE_COBBLE
+export function getFloorTile(type: string): SpriteData {
+  return FLOOR_TILES[type] || TILE_COBBLE
 }
 
+// === WALL SPRITES ===
+
+// Wall stone - tall stone blocks with cracks (existing TILE_WALL)
+export const WALL_STONE: SpriteData = TILE_WALL
+
+// Wall window - window with volcanic view (16x16)
+// Procedural gradient + animated lava particles
+export const WALL_WINDOW: SpriteData = (() => {
+  const sprite: SpriteData = []
+  for (let y = 0; y < 16; y++) {
+    const row: string[] = []
+    for (let x = 0; x < 16; x++) {
+      row.push(HELL_FIRE.stoneDark)
+    }
+    sprite.push(row)
+  }
+  // Window frame (stone arch)
+  // Top arch
+  for (let x = 5; x <= 10; x++) {
+    sprite[1][x] = HELL_FIRE.stoneMid
+  }
+  for (let x = 4; x <= 11; x++) {
+    sprite[2][x] = HELL_FIRE.stoneLite
+  }
+  // Window sides
+  for (let y = 3; y <= 13; y++) {
+    sprite[y][4] = HELL_FIRE.stoneLite
+    sprite[y][11] = HELL_FIRE.stoneLite
+  }
+  // Window bottom
+  for (let x = 4; x <= 11; x++) {
+    sprite[13][x] = HELL_FIRE.stoneLite
+  }
+  // Window sill
+  for (let x = 3; x <= 12; x++) {
+    sprite[14][x] = HELL_FIRE.stoneMid
+  }
+  // Window interior - volcanic sky gradient
+  for (let y = 3; y <= 12; y++) {
+    for (let x = 5; x <= 10; x++) {
+      // Orange/red sky gradient
+      const topDist = y - 3
+      const skyColors = [HELL_FIRE.lavaBright, HELL_FIRE.lavaHot, HELL_FIRE.lavaDeep, HELL_FIRE.redBright]
+      if (topDist < 3) sprite[y][x] = skyColors[0]
+      else if (topDist < 6) sprite[y][x] = skyColors[1]
+      else if (topDist < 8) sprite[y][x] = skyColors[2]
+      else sprite[y][x] = skyColors[3]
+    }
+  }
+  // Lava glow at bottom of window
+  for (let x = 5; x <= 10; x++) {
+    sprite[11][x] = HELL_FIRE.lavaYellow
+    sprite[12][x] = HELL_FIRE.lavaGlow
+  }
+  return sprite
+})()
+
+// Animated window frames - base frame + lava particle positions for rendering
+export const WINDOW_LAVA_PARTICLES = [
+  { baseX: 0.3, baseY: 0.1, speed: 2, size: 1.0 },
+  { baseX: 0.4, baseY: 0.2, speed: 2.5, size: 0.8 },
+  { baseX: 0.5, baseY: 0.15, speed: 1.8, size: 1.2 },
+  { baseX: 0.6, baseY: 0.25, speed: 2.2, size: 0.9 },
+  { baseX: 0.7, baseY: 0.1, speed: 2.7, size: 1.1 },
+]
+
+// Wall door - door opening with dark interior (16x16)
+export const WALL_DOOR: SpriteData = (() => {
+  const sprite: SpriteData = []
+  for (let y = 0; y < 16; y++) {
+    const row: string[] = []
+    for (let x = 0; x < 16; x++) {
+      row.push(HELL_FIRE.stoneDark)
+    }
+    sprite.push(row)
+  }
+  // Door frame (stone)
+  // Left side
+  for (let y = 0; y <= 15; y++) {
+    sprite[y][3] = HELL_FIRE.stoneLite
+    sprite[y][4] = HELL_FIRE.stoneMid
+  }
+  // Right side
+  for (let y = 0; y <= 15; y++) {
+    sprite[y][11] = HELL_FIRE.stoneMid
+    sprite[y][12] = HELL_FIRE.stoneLite
+  }
+  // Top lintel
+  for (let x = 4; x <= 11; x++) {
+    sprite[0][x] = HELL_FIRE.stoneHigh
+  }
+  // Door opening - dark interior
+  for (let y = 1; y <= 15; y++) {
+    for (let x = 5; x <= 10; x++) {
+      sprite[y][x] = HELL_FIRE.black
+    }
+  }
+  // Slight glow from interior
+  for (let y = 10; y <= 14; y++) {
+    for (let x = 6; x <= 9; x++) {
+      sprite[y][x] = HELL_FIRE.lavaDark
+    }
+  }
+  return sprite
+})()
+
+// Wall pillar - ornate stone pillar with skull frieze (16x16)
+export const WALL_PILLAR: SpriteData = (() => {
+  const sprite: SpriteData = []
+  for (let y = 0; y < 16; y++) {
+    const row: string[] = []
+    for (let x = 0; x < 16; x++) {
+      row.push(HELL_FIRE.stoneDark)
+    }
+    sprite.push(row)
+  }
+  // Capital (top decoration)
+  for (let x = 4; x <= 11; x++) {
+    sprite[0][x] = HELL_FIRE.stoneHigh
+  }
+  for (let x = 3; x <= 12; x++) {
+    sprite[1][x] = HELL_FIRE.stoneLite
+  }
+  // Column body
+  for (let y = 2; y <= 13; y++) {
+    sprite[y][4] = HELL_FIRE.stoneDark
+    sprite[y][5] = HELL_FIRE.stoneMid
+    sprite[y][6] = HELL_FIRE.stoneLite
+    sprite[y][9] = HELL_FIRE.stoneLite
+    sprite[y][10] = HELL_FIRE.stoneMid
+    sprite[y][11] = HELL_FIRE.stoneDark
+  }
+  // Inner column
+  for (let y = 2; y <= 13; y++) {
+    sprite[y][7] = HELL_FIRE.stoneLite
+    sprite[y][8] = HELL_FIRE.stoneLite
+  }
+  // Skull frieze (decorative skulls at mid-height)
+  const skullRow = 7
+  // Skull 1 at col 6
+  sprite[skullRow-1][6] = HELL_FIRE.bone
+  sprite[skullRow][5] = HELL_FIRE.bone
+  sprite[skullRow][6] = HELL_FIRE.goldDark
+  sprite[skullRow][7] = HELL_FIRE.bone
+  sprite[skullRow+1][6] = HELL_FIRE.bone
+  // Skull 2 at col 9
+  sprite[skullRow-1][9] = HELL_FIRE.bone
+  sprite[skullRow][8] = HELL_FIRE.bone
+  sprite[skullRow][9] = HELL_FIRE.goldDark
+  sprite[skullRow][10] = HELL_FIRE.bone
+  sprite[skullRow+1][9] = HELL_FIRE.bone
+  // Base (bottom)
+  for (let x = 3; x <= 12; x++) {
+    sprite[14][x] = HELL_FIRE.stoneLite
+  }
+  for (let x = 4; x <= 11; x++) {
+    sprite[15][x] = HELL_FIRE.stoneHigh
+  }
+  return sprite
+})()
+
 export const WALL_TILES: Record<string, SpriteData> = {
-  stone: TILE_WALL,
+  stone: WALL_STONE,
+  window: WALL_WINDOW,
+  door: WALL_DOOR,
+  pillar: WALL_PILLAR,
 }
-export function getWallTile(_type: string): SpriteData {
-  return TILE_WALL
+export function getWallTile(type: string): SpriteData {
+  return WALL_TILES[type] || WALL_STONE
 }
 
 export const LAVA_TILE_FRAMES: SpriteData[] = LAVA_FRAMES
@@ -633,3 +1277,105 @@ export const FURNITURE_SPRITES: Record<string, SpriteData> = {
 export function getFurnitureSprite(type: string): SpriteData {
   return FURNITURE_SPRITES[type] || FURNITURE_DESK
 }
+
+// === OFFICE SWIVEL CHAIR V3.4 (4-directional with wheels) ===
+// Import from dedicated module
+export const CHAIR_SWIVEL_V34 = [
+  // DOWN (0) - back rest visible, front edge of seat, 4 wheels below
+  [
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,HELL_FIRE.stoneMid,_,_,_,_,_,_,HELL_FIRE.stoneMid,_,_,_,_],
+    [_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.stoneHigh,HELL_FIRE.stoneHigh,HELL_FIRE.stoneHigh,HELL_FIRE.stoneHigh,HELL_FIRE.stoneHigh,_,HELL_FIRE.stoneMid,_,_,_,_],
+    [_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.redMid,HELL_FIRE.redBright,HELL_FIRE.redBright,HELL_FIRE.redBright,HELL_FIRE.redMid,HELL_FIRE.stoneMid,_,_,_,_],
+    [_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.redBright,HELL_FIRE.redFire,HELL_FIRE.redFire,HELL_FIRE.redFire,HELL_FIRE.redBright,HELL_FIRE.stoneMid,_,_,_,_],
+    [_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.redMid,HELL_FIRE.redBright,HELL_FIRE.redBright,HELL_FIRE.redBright,HELL_FIRE.redMid,HELL_FIRE.stoneMid,_,_,_,_],
+    [_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.goldMid,HELL_FIRE.goldBright,HELL_FIRE.goldBright,HELL_FIRE.goldBright,HELL_FIRE.goldMid,HELL_FIRE.stoneMid,_,_,_,_],
+    [_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.goldBright,HELL_FIRE.goldGlow,HELL_FIRE.goldGlow,HELL_FIRE.goldGlow,HELL_FIRE.goldBright,HELL_FIRE.stoneMid,_,_,_,_],
+    [_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.goldMid,HELL_FIRE.goldBright,HELL_FIRE.goldBright,HELL_FIRE.goldBright,HELL_FIRE.goldMid,HELL_FIRE.stoneMid,_,_,_,_],
+    [_,_,_,_,_,HELL_FIRE.stoneDark,_,_,_,_,_,_,_,HELL_FIRE.stoneDark,_,_,_,_],
+    [_,_,_,_,_,HELL_FIRE.goldDark,_,_,_,_,_,_,_,HELL_FIRE.goldDark,_,_,_,_],
+    [_,_,_,_,_,_,HELL_FIRE.goldMid,_,_,_,_,_,HELL_FIRE.goldMid,_,_,_,_],
+    [_,_,_,_,_,_,_,HELL_FIRE.goldBright,_,_,_,HELL_FIRE.goldBright,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+  ],
+  // LEFT (1) - left armrest visible, left side of seat, wheels on left
+  [
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,HELL_FIRE.stoneMid,HELL_FIRE.stoneHigh,HELL_FIRE.stoneHigh,HELL_FIRE.stoneMid,_,_,_,_,_,_,_,_,_,_],
+    [_,_,HELL_FIRE.stoneMid,HELL_FIRE.stoneHigh,HELL_FIRE.stoneHigh,HELL_FIRE.stoneHigh,HELL_FIRE.stoneHigh,_,_,_,_,_,_,_,_,_],
+    [_,_,HELL_FIRE.stoneMid,HELL_FIRE.redMid,HELL_FIRE.redBright,HELL_FIRE.redBright,HELL_FIRE.redMid,_,_,_,_,_,_,_,_,_],
+    [_,_,HELL_FIRE.stoneMid,HELL_FIRE.redBright,HELL_FIRE.redFire,HELL_FIRE.redFire,HELL_FIRE.redBright,HELL_FIRE.stoneMid,_,_,_,_,_,_,_,_],
+    [_,_,HELL_FIRE.stoneMid,HELL_FIRE.redMid,HELL_FIRE.redBright,HELL_FIRE.redBright,HELL_FIRE.redMid,HELL_FIRE.stoneMid,_,_,_,_,_,_,_,_],
+    [_,_,HELL_FIRE.stoneMid,HELL_FIRE.goldMid,HELL_FIRE.goldBright,HELL_FIRE.goldBright,HELL_FIRE.goldMid,HELL_FIRE.stoneMid,_,_,_,_,_,_,_,_],
+    [_,_,HELL_FIRE.stoneMid,HELL_FIRE.goldBright,HELL_FIRE.goldGlow,HELL_FIRE.goldGlow,HELL_FIRE.goldBright,HELL_FIRE.stoneMid,_,_,_,_,_,_,_,_],
+    [_,_,HELL_FIRE.stoneMid,HELL_FIRE.goldMid,HELL_FIRE.goldBright,HELL_FIRE.goldBright,HELL_FIRE.goldMid,HELL_FIRE.stoneMid,_,_,_,_,_,_,_,_],
+    [_,_,HELL_FIRE.stoneDark,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,HELL_FIRE.goldDark,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,HELL_FIRE.goldMid,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,HELL_FIRE.goldBright,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+  ],
+  // RIGHT (2) - right armrest visible, right side of seat, wheels on right
+  [
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.stoneHigh,HELL_FIRE.stoneHigh,HELL_FIRE.stoneMid,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.stoneHigh,HELL_FIRE.stoneHigh,HELL_FIRE.stoneHigh,HELL_FIRE.stoneHigh,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.redMid,HELL_FIRE.redBright,HELL_FIRE.redBright,HELL_FIRE.redMid,_,_,_],
+    [_,_,_,_,_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.redMid,HELL_FIRE.redBright,HELL_FIRE.redFire,HELL_FIRE.redFire,HELL_FIRE.redBright,_,_,_],
+    [_,_,_,_,_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.redMid,HELL_FIRE.redBright,HELL_FIRE.redBright,HELL_FIRE.redMid,HELL_FIRE.stoneMid,_,_,_],
+    [_,_,_,_,_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.goldMid,HELL_FIRE.goldBright,HELL_FIRE.goldBright,HELL_FIRE.goldMid,HELL_FIRE.stoneMid,_,_,_],
+    [_,_,_,_,_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.goldBright,HELL_FIRE.goldGlow,HELL_FIRE.goldGlow,HELL_FIRE.goldBright,HELL_FIRE.stoneMid,_,_,_],
+    [_,_,_,_,_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.goldMid,HELL_FIRE.goldBright,HELL_FIRE.goldBright,HELL_FIRE.goldMid,HELL_FIRE.stoneMid,_,_,_],
+    [_,_,_,_,_,_,_,_,_,HELL_FIRE.stoneDark,_,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,HELL_FIRE.goldDark,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,HELL_FIRE.goldMid,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,HELL_FIRE.goldBright,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+  ],
+  // UP (3) - seat visible from top, back of chair, wheels all around
+  [
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.stoneMid,_,_,_,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.stoneMid,_,_,_,_],
+    [_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.stoneHigh,HELL_FIRE.stoneHigh,HELL_FIRE.stoneMid,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.stoneHigh,HELL_FIRE.stoneHigh,HELL_FIRE.stoneMid,_,_,_],
+    [_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.redMid,HELL_FIRE.redBright,HELL_FIRE.redMid,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.redMid,HELL_FIRE.redBright,HELL_FIRE.redMid,_,_,_],
+    [_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.redBright,HELL_FIRE.redFire,HELL_FIRE.redBright,HELL_FIRE.stoneMid,_,HELL_FIRE.stoneMid,HELL_FIRE.redBright,HELL_FIRE.redFire,HELL_FIRE.redBright,HELL_FIRE.stoneMid,_,_,_],
+    [_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.redMid,HELL_FIRE.redBright,HELL_FIRE.redMid,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.redMid,HELL_FIRE.redBright,HELL_FIRE.redMid,_,_,_],
+    [_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.goldMid,HELL_FIRE.goldBright,HELL_FIRE.goldMid,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.goldMid,HELL_FIRE.goldBright,HELL_FIRE.goldMid,_,_,_],
+    [_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.goldBright,HELL_FIRE.goldGlow,HELL_FIRE.goldBright,HELL_FIRE.stoneMid,_,HELL_FIRE.stoneMid,HELL_FIRE.goldBright,HELL_FIRE.goldGlow,HELL_FIRE.goldBright,HELL_FIRE.stoneMid,_,_,_],
+    [_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.goldMid,HELL_FIRE.goldBright,HELL_FIRE.goldMid,_,_,_,HELL_FIRE.stoneMid,HELL_FIRE.goldMid,HELL_FIRE.goldBright,HELL_FIRE.goldMid,_,_,_],
+    [_,_,_,HELL_FIRE.stoneDark,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,HELL_FIRE.goldDark,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+    [_,_,_,HELL_FIRE.goldMid,_,_,_,_,_,_,_,_,_,HELL_FIRE.goldMid,_,_,_,_],
+    [_,_,_,_,HELL_FIRE.goldBright,_,_,_,_,_,_,_,_,HELL_FIRE.goldBright,_,_,_,_],
+    [_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_],
+  ],
+]
+
+export function getChairSwivelSprite(direction: number): SpriteData {
+  return CHAIR_SWIVEL_V34[direction % 4]
+}
+
+// Upscale helper (16x16 → 32x32 for rendering)
+export function upscaleChairSprite(sprite: SpriteData): SpriteData {
+  const result: SpriteData = []
+  for (let y = 0; y < 16; y++) {
+    const row = sprite[y] || Array(16).fill(_)
+    const expandedRow: string[] = []
+    for (let x = 0; x < 16; x++) {
+      expandedRow.push(row[x], row[x])
+    }
+    result.push([...expandedRow], [...expandedRow])
+  }
+  return result
+}
+
+// Export upscaled versions (32x32)
+export const CHAIR_SWIVEL_V34_UPSCALED: SpriteData[] = CHAIR_SWIVEL_V34.map(upscaleChairSprite)

@@ -7,8 +7,8 @@
 
 export type RoomId = 'lounge' | 'pit' | 'war'
 
-export type FloorTile = 'cobble' | 'lava' | 'void'
-export type WallTile = 'stone' | 'lava_edge' | null
+export type FloorTile = 'cobble' | 'lava' | 'void' | 'wood_planks' | 'stone_tile' | 'carpet_red' | 'carpet_blue' | 'carpet_purple'
+export type WallTile = 'stone' | 'lava_edge' | 'window' | 'door' | 'pillar' | null
 
 export interface MockAgent {
   id: number
@@ -48,27 +48,31 @@ export const MOCKUP_COLS = 24
 export const MOCKUP_ROWS = 18
 
 // === FLOOR MAP (24x18) ===
-// 'c' = cobblestone, 'l' = lava, '.' = void
-// Index = row * 24 + col
+// 'w' = wood_planks (War Room, rows 0-7)
+// 's' = stone_tile (The Pit, rows 9-17, cols 0-13)
+// 'r' = carpet_red (Hell's Lounge, rows 9-11, cols 14-23)
+// 'p' = carpet_purple (Hell's Lounge, rows 12-14, cols 14-23)
+// 'b' = carpet_blue (Hell's Lounge, rows 15-17, cols 14-23)
+// 'l' = lava (row 8, lava strip)
+// 'v' = void (empty areas)
 const FLOOR_MAP_STR = `
-cccccccccccccccccccccccc
-cccccccccccccccccccccccc
-cccccccccccccccccccccccc
-cccccccccccccccccccccccc
-cccccccccccccccccccccccc
-cccccccccccccccccccccccc
-cccccccccccccccccccccccc
-cccccccccccccccccccccccc
+wwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwww
+wwwwwwwwwwwwwwwwwwwwwwww
 llllllllllllllllllllllll
-ccccccccccccccpccccccccc
-ccccccccccccccccccllccc
-ccccccccccccccccccccccc
-ccccccccccccccccccccccc
-ccccccccccccccccccccccc
-ccccccccccccccccccccccc
-ccccccccccccccccccccccc
-ccccccccccccccccccccccc
-ccccccccccccccccccccccc
+sssssssssssssssrrrrrrrrrr
+sssssssssssssssrrrrrrrrrr
+ssssssssssssssspppppppppp
+ssssssssssssssspppppppppp
+ssssssssssssssspppppppppp
+sssssssssssssssbbbbbbbbbb
+sssssssssssssssbbbbbbbbbb
+sssssssssssssssbbbbbbbbbb
 `.replace(/^\n/, '').replace(/\n$/, '')
 
 export const FLOOR_MAP: FloorTile[][] = (() => {
@@ -76,47 +80,74 @@ export const FLOOR_MAP: FloorTile[][] = (() => {
   return rows.map(row => row.split('').map(ch => {
     if (ch === 'c') return 'cobble'
     if (ch === 'l') return 'lava'
+    if (ch === 'v') return 'void'
+    if (ch === 'w') return 'wood_planks'
+    if (ch === 's') return 'stone_tile'
+    if (ch === 'r') return 'carpet_red'
+    if (ch === 'b') return 'carpet_blue'
+    if (ch === 'p') return 'carpet_purple'
     return 'void'
   }))
 })()
 
+export interface WallCell {
+  top: boolean
+  left: boolean
+  topType: 'stone' | 'window' | 'door' | 'pillar' | null
+  leftType: 'stone' | 'window' | 'door' | 'pillar' | null
+}
+
 // === WALL MAP (24x18) — same dimensions ===
-// 'h' = horizontal wall on top of tile, 'v' = vertical wall on left of tile, 'x' = corner
-// Or use 0/1: top wall, left wall
-// Map cell format: { top: bool, left: bool }
+// 'h' = horizontal wall on top of tile, 'v' = vertical wall on left of tile
+// 'H' = horizontal wall with window, 'V' = vertical wall with window
+// 'D' = door, 'P' = pillar, '.' = no wall
+// Windows: War Room rows 2,3,4 at col 22 (right wall), The Pit row 12 at col 13 (right wall)
 const WALL_MAP_STR = `
 hhhhhhhhhhhhhhhhhhhhhhhh
 v.l...................v
+v.l...................H
+v.l...................H
+v.l...................H
 v.l...................v
 v.l...................v
 v.l...................v
-v.l...................v
-v.l...................v
-v.l...................v
-.........................
+........................
+v.l...........v.......v
+v.l...........v.......v
+v.l...........v.......v
+v.l...........v.......H
 v.l...........v.......v
 v.l...........v.......v
 v.l...........v.......v
 v.l...........v.......v
-v.l...........v.......v
-v.l...........v.......v
-v.l...........v.......v
-v.l...................v
 v.l...................v
 hhhhhhhhhhhhhhhhhhhhhhhh
 `.replace(/^\n/, '').replace(/\n$/, '')
 
-export const WALL_MAP: { top: boolean; left: boolean }[][] = (() => {
+export const WALL_MAP: WallCell[][] = (() => {
   const rows = WALL_MAP_STR.split('\n')
   return rows.map(row => {
-    const cells: { top: boolean; left: boolean }[] = []
+    const cells: WallCell[] = []
     let i = 0
     while (i < row.length) {
       const ch = row[i]
-      if (ch === 'h') { cells.push({ top: true, left: false }); i++ }
-      else if (ch === 'v') { cells.push({ top: false, left: true }); i++ }
-      else if (ch === '.') { cells.push({ top: false, left: false }); i++ }
-      else { cells.push({ top: false, left: false }); i++ }
+      if (ch === 'h') {
+        cells.push({ top: true, left: false, topType: 'stone', leftType: null }); i++
+      } else if (ch === 'H') {
+        cells.push({ top: true, left: false, topType: 'window', leftType: null }); i++
+      } else if (ch === 'v') {
+        cells.push({ top: false, left: true, topType: null, leftType: 'stone' }); i++
+      } else if (ch === 'V') {
+        cells.push({ top: false, left: true, topType: null, leftType: 'window' }); i++
+      } else if (ch === '.') {
+        cells.push({ top: false, left: false, topType: null, leftType: null }); i++
+      } else if (ch === 'D') {
+        cells.push({ top: true, left: false, topType: 'door', leftType: null }); i++
+      } else if (ch === 'P') {
+        cells.push({ top: true, left: false, topType: 'pillar', leftType: null }); i++
+      } else {
+        cells.push({ top: false, left: false, topType: null, leftType: null }); i++
+      }
     }
     return cells
   })
