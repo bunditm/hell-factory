@@ -1,7 +1,14 @@
-// Mockup data — static layout for Phase A review
-// Hell Office: 3 rooms with hardcoded agent positions
+// Mockup data v2 — full tile map with walls, lava pools, trees, fire pits
+// 24 cols x 18 rows
+// Layout:
+//   Row 0-7:   War Room (top, where Hermes sits)         cols 0-23
+//   Row 8:     lava strip (open lava, no walls)
+//   Row 9-17:  The Pit (left) + Hell's Lounge (right)   cols 0-23
 
 export type RoomId = 'lounge' | 'pit' | 'war'
+
+export type FloorTile = 'cobble' | 'lava' | 'void'
+export type WallTile = 'stone' | 'lava_edge' | null
 
 export interface MockAgent {
   id: number
@@ -13,17 +20,17 @@ export interface MockAgent {
   facing: 0 | 1 | 2 | 3
   state: 'idle' | 'working' | 'waiting_approval' | 'barking'
   bubble: string | null
-  deskCol: number
-  deskRow: number
 }
 
 export interface MockFurniture {
-  type: 'desk' | 'chair' | 'plant' | 'couch' | 'pillar' | 'firepit'
+  type: 'desk' | 'chair' | 'plant' | 'couch' | 'pillar' | 'firepit' | 'torch' | 'tree' | 'rock'
   col: number
   row: number
-  w: number
-  h: number
-  color: string
+  // sprite size in tiles
+  sw: number
+  sh: number
+  // for 'rock' cluster, place multiple
+  count?: number
 }
 
 export interface MockRoom {
@@ -37,15 +44,85 @@ export interface MockRoom {
   glowColor: string
 }
 
-// 24 cols x 18 rows map
-// Layout:
-//   Row 0-7:   War Room (top, where Hermes sits)         cols 0-23
-//   Row 8:     lava strip
-//   Row 9-17:  The Pit (left) + Hell's Lounge (right)   cols 0-23
-
 export const MOCKUP_COLS = 24
 export const MOCKUP_ROWS = 18
 
+// === FLOOR MAP (24x18) ===
+// 'c' = cobblestone, 'l' = lava, '.' = void
+// Index = row * 24 + col
+const FLOOR_MAP_STR = `
+cccccccccccccccccccccccc
+cccccccccccccccccccccccc
+cccccccccccccccccccccccc
+cccccccccccccccccccccccc
+cccccccccccccccccccccccc
+cccccccccccccccccccccccc
+cccccccccccccccccccccccc
+cccccccccccccccccccccccc
+llllllllllllllllllllllll
+ccccccccccccccpccccccccc
+ccccccccccccccccccllccc
+ccccccccccccccccccccccc
+ccccccccccccccccccccccc
+ccccccccccccccccccccccc
+ccccccccccccccccccccccc
+ccccccccccccccccccccccc
+ccccccccccccccccccccccc
+ccccccccccccccccccccccc
+`.replace(/^\n/, '').replace(/\n$/, '')
+
+export const FLOOR_MAP: FloorTile[][] = (() => {
+  const rows = FLOOR_MAP_STR.split('\n')
+  return rows.map(row => row.split('').map(ch => {
+    if (ch === 'c') return 'cobble'
+    if (ch === 'l') return 'lava'
+    return 'void'
+  }))
+})()
+
+// === WALL MAP (24x18) — same dimensions ===
+// 'h' = horizontal wall on top of tile, 'v' = vertical wall on left of tile, 'x' = corner
+// Or use 0/1: top wall, left wall
+// Map cell format: { top: bool, left: bool }
+const WALL_MAP_STR = `
+hhhhhhhhhhhhhhhhhhhhhhhh
+v.l...................v
+v.l...................v
+v.l...................v
+v.l...................v
+v.l...................v
+v.l...................v
+v.l...................v
+.........................
+v.l...........v.......v
+v.l...........v.......v
+v.l...........v.......v
+v.l...........v.......v
+v.l...........v.......v
+v.l...........v.......v
+v.l...........v.......v
+v.l...................v
+v.l...................v
+hhhhhhhhhhhhhhhhhhhhhhhh
+`.replace(/^\n/, '').replace(/\n$/, '')
+
+export const WALL_MAP: { top: boolean; left: boolean }[][] = (() => {
+  const rows = WALL_MAP_STR.split('\n')
+  return rows.map(row => {
+    const cells: { top: boolean; left: boolean }[] = []
+    let i = 0
+    while (i < row.length) {
+      const ch = row[i]
+      if (ch === 'h') { cells.push({ top: true, left: false }); i++ }
+      else if (ch === 'v') { cells.push({ top: false, left: true }); i++ }
+      else if (ch === '.') { cells.push({ top: false, left: false }); i++ }
+      else { cells.push({ top: false, left: false }); i++ }
+    }
+    return cells
+  })
+})()
+
+// Rooms (for label rendering only)
 export const MOCKUP_ROOMS: MockRoom[] = [
   {
     id: 'war',
@@ -70,101 +147,116 @@ export const MOCKUP_ROOMS: MockRoom[] = [
   },
 ]
 
-// Static furniture layout
+// === FURNITURE (tile-coords) ===
 export const MOCKUP_FURNITURE: MockFurniture[] = [
-  // === War Room (Hermes' throne + 2 pillars) ===
-  { type: 'pillar', col: 1,  row: 1,  w: 1, h: 1, color: '#1a1a1a' },
-  { type: 'pillar', col: 22, row: 1,  w: 1, h: 1, color: '#1a1a1a' },
-  { type: 'pillar', col: 1,  row: 6,  w: 1, h: 1, color: '#1a1a1a' },
-  { type: 'pillar', col: 22, row: 6,  w: 1, h: 1, color: '#1a1a1a' },
-  // Hermes desk (center of war room)
-  { type: 'desk',    col: 10, row: 3,  w: 4, h: 2, color: '#3d0000' },
-  { type: 'chair',   col: 11, row: 5,  w: 1, h: 1, color: '#aa0000' },
-  { type: 'firepit', col: 4,  row: 5,  w: 2, h: 2, color: '#ff5500' },
-  { type: 'firepit', col: 18, row: 5,  w: 2, h: 2, color: '#ff5500' },
+  // === War Room ===
+  // Pillars at corners
+  { type: 'pillar', col: 1,  row: 1,  sw: 1, sh: 1 },
+  { type: 'pillar', col: 22, row: 1,  sw: 1, sh: 1 },
+  { type: 'pillar', col: 1,  row: 6,  sw: 1, sh: 1 },
+  { type: 'pillar', col: 22, row: 6,  sw: 1, sh: 1 },
+  // Torches on walls
+  { type: 'torch',  col: 1,  row: 3,  sw: 1, sh: 1 },
+  { type: 'torch',  col: 22, row: 3,  sw: 1, sh: 1 },
+  { type: 'torch',  col: 1,  row: 5,  sw: 1, sh: 1 },
+  { type: 'torch',  col: 22, row: 5,  sw: 1, sh: 1 },
+  // Firepits flanking Hermes' desk
+  { type: 'firepit', col: 4,  row: 5,  sw: 1, sh: 1 },
+  { type: 'firepit', col: 19, row: 5,  sw: 1, sh: 1 },
+  // Hermes' throne desk
+  { type: 'desk',  col: 10, row: 3,  sw: 2, sh: 1 },
+  { type: 'chair', col: 11, row: 4,  sw: 1, sh: 1 },
+  // Fire trees for atmosphere
+  { type: 'tree',  col: 5,  row: 1,  sw: 1, sh: 1 },
+  { type: 'tree',  col: 18, row: 1,  sw: 1, sh: 1 },
+  { type: 'tree',  col: 5,  row: 6,  sw: 1, sh: 1 },
+  { type: 'tree',  col: 18, row: 6,  sw: 1, sh: 1 },
 
-  // === The Pit (working desks, 2x2 grid) ===
-  { type: 'desk',  col: 1,  row: 10, w: 2, h: 2, color: '#2d0000' },
-  { type: 'desk',  col: 4,  row: 10, w: 2, h: 2, color: '#2d0000' },
-  { type: 'desk',  col: 7,  row: 10, w: 2, h: 2, color: '#2d0000' },
-  { type: 'desk',  col: 10, row: 10, w: 2, h: 2, color: '#2d0000' },
-  // 4 chairs in front of desks
-  { type: 'chair', col: 1,  row: 12, w: 1, h: 1, color: '#1a1a1a' },
-  { type: 'chair', col: 5,  row: 12, w: 1, h: 1, color: '#1a1a1a' },
-  { type: 'chair', col: 7,  row: 12, w: 1, h: 1, color: '#1a1a1a' },
-  { type: 'chair', col: 11, row: 12, w: 1, h: 1, color: '#1a1a1a' },
-  // Plants for atmosphere
-  { type: 'plant', col: 0,  row: 16, w: 1, h: 1, color: '#0a3d0a' },
-  { type: 'plant', col: 13, row: 16, w: 1, h: 1, color: '#0a3d0a' },
+  // === The Pit (working desks) ===
+  { type: 'desk',  col: 1,  row: 10, sw: 2, sh: 1 },
+  { type: 'desk',  col: 4,  row: 10, sw: 2, sh: 1 },
+  { type: 'desk',  col: 7,  row: 10, sw: 2, sh: 1 },
+  { type: 'desk',  col: 10, row: 10, sw: 2, sh: 1 },
+  { type: 'chair', col: 1,  row: 11, sw: 1, sh: 1 },
+  { type: 'chair', col: 5,  row: 11, sw: 1, sh: 1 },
+  { type: 'chair', col: 7,  row: 11, sw: 1, sh: 1 },
+  { type: 'chair', col: 11, row: 11, sw: 1, sh: 1 },
+  // Plants/trees on side
+  { type: 'tree',  col: 0,  row: 16, sw: 1, sh: 1 },
+  { type: 'tree',  col: 13, row: 16, sw: 1, sh: 1 },
+  // Firepits in corners
+  { type: 'firepit', col: 0, row: 14, sw: 1, sh: 1 },
+  { type: 'firepit', col: 13, row: 14, sw: 1, sh: 1 },
 
   // === Hell's Lounge (idle agents on couches) ===
-  { type: 'couch', col: 15, row: 11, w: 3, h: 1, color: '#5a0000' },
-  { type: 'couch', col: 19, row: 11, w: 3, h: 1, color: '#5a0000' },
-  { type: 'couch', col: 15, row: 15, w: 3, h: 1, color: '#5a0000' },
-  { type: 'couch', col: 19, row: 15, w: 3, h: 1, color: '#5a0000' },
-  { type: 'plant', col: 14, row: 9,  w: 1, h: 1, color: '#0a3d0a' },
-  { type: 'plant', col: 23, row: 9,  w: 1, h: 1, color: '#0a3d0a' },
-  { type: 'plant', col: 14, row: 17, w: 1, h: 1, color: '#0a3d0a' },
-  { type: 'plant', col: 23, row: 17, w: 1, h: 1, color: '#0a3d0a' },
+  { type: 'couch', col: 15, row: 11, sw: 2, sh: 1 },
+  { type: 'couch', col: 19, row: 11, sw: 2, sh: 1 },
+  { type: 'couch', col: 15, row: 15, sw: 2, sh: 1 },
+  { type: 'couch', col: 19, row: 15, sw: 2, sh: 1 },
+  { type: 'tree',  col: 14, row: 9,  sw: 1, sh: 1 },
+  { type: 'tree',  col: 23, row: 9,  sw: 1, sh: 1 },
+  { type: 'tree',  col: 14, row: 17, sw: 1, sh: 1 },
+  { type: 'tree',  col: 23, row: 17, sw: 1, sh: 1 },
+  { type: 'firepit', col: 14, row: 13, sw: 1, sh: 1 },
+  { type: 'firepit', col: 23, row: 13, sw: 1, sh: 1 },
 ]
 
-// Hardcoded agents
+// Rocks scattered in the lava strip (row 8) for visual interest
+export const LAVA_ROCKS: { col: number; row: number }[] = [
+  { col: 3, row: 8 },
+  { col: 8, row: 8 },
+  { col: 14, row: 8 },
+  { col: 19, row: 8 },
+]
+
+// === AGENTS ===
 export const MOCKUP_AGENTS: MockAgent[] = [
-  // === The Pit — working agents ===
+  // The Pit — working agents
   {
     id: 1, name: 'frontend-dev', profile: 'frontend-eng', palette: 1,
     seatCol: 1, seatRow: 11, facing: 0,
     state: 'working', bubble: 'Building UI...',
-    deskCol: 1, deskRow: 10,
   },
   {
     id: 2, name: 'backend-dev', profile: 'backend-eng', palette: 2,
     seatCol: 5, seatRow: 11, facing: 0,
     state: 'working', bubble: 'Compiling Rust...',
-    deskCol: 4, deskRow: 10,
   },
   {
     id: 3, name: 'devops', profile: 'ops', palette: 3,
     seatCol: 7, seatRow: 11, facing: 0,
     state: 'waiting_approval', bubble: 'Need approval!',
-    deskCol: 7, deskRow: 10,
   },
   {
     id: 4, name: 'qa-engineer', profile: 'qa', palette: 4,
     seatCol: 11, seatRow: 11, facing: 0,
     state: 'working', bubble: 'Running tests...',
-    deskCol: 10, deskRow: 10,
   },
-  // === Hell's Lounge — idle agents (showing "Give Me More Work!") ===
+  // Hell's Lounge — idle
   {
     id: 5, name: 'frontend-dev-2', profile: 'frontend-eng', palette: 1,
     seatCol: 16, seatRow: 11, facing: 0,
     state: 'idle', bubble: 'Give me more work!',
-    deskCol: 15, deskRow: 11,
   },
   {
     id: 6, name: 'backend-dev-2', profile: 'backend-eng', palette: 2,
     seatCol: 20, seatRow: 11, facing: 0,
     state: 'idle', bubble: 'Give me more work!',
-    deskCol: 19, deskRow: 11,
   },
   {
     id: 7, name: 'devops-2', profile: 'ops', palette: 3,
     seatCol: 16, seatRow: 15, facing: 0,
     state: 'idle', bubble: 'Give me more work!',
-    deskCol: 15, deskRow: 15,
   },
   {
     id: 8, name: 'qa-engineer-2', profile: 'qa', palette: 4,
     seatCol: 20, seatRow: 15, facing: 0,
     state: 'idle', bubble: 'Give me more work!',
-    deskCol: 19, deskRow: 15,
   },
-  // === Hermes — always in War Room ===
+  // Hermes
   {
     id: 0, name: 'Hermes', profile: 'hermes', palette: 0,
-    seatCol: 12, seatRow: 3, facing: 0,
+    seatCol: 11, seatRow: 3, facing: 0,
     state: 'barking', bubble: 'DO THE WORK!',
-    deskCol: 10, deskRow: 3,
   },
 ]
