@@ -23,7 +23,10 @@ export interface MockAgent {
 }
 
 export interface MockFurniture {
-  type: 'desk' | 'chair' | 'plant' | 'couch' | 'pillar' | 'firepit' | 'torch' | 'tree' | 'rock'
+  type: 'desk' | 'chair' | 'plant' | 'couch' | 'pillar' | 'firepit' | 'torch' | 'tree' | 'rock' |
+        'desk_v3' | 'chair_v3' | 'lamp' | 'bookshelf' | 'water_cooler' | 'vending_machine' |
+        'filing_cabinet' | 'fern' | 'palm' | 'flower' | 'cactus' | 'clock' | 'painting' |
+        'bulletin' | 'torch_wall' | 'carpet_red' | 'carpet_blue' | 'carpet_purple'
   col: number
   row: number
   // sprite size in tiles
@@ -179,57 +182,102 @@ export const MOCKUP_ROOMS: MockRoom[] = [
 ]
 
 // === FURNITURE (tile-coords) ===
+// Phase A v3 — comprehensive placement of all new furniture sprites
 export const MOCKUP_FURNITURE: MockFurniture[] = [
-  // === War Room ===
+  // === War Room (rows 0-7) ===
   // Pillars at corners
-  { type: 'pillar', col: 1,  row: 1,  sw: 1, sh: 1 },
-  { type: 'pillar', col: 22, row: 1,  sw: 1, sh: 1 },
-  { type: 'pillar', col: 1,  row: 6,  sw: 1, sh: 1 },
-  { type: 'pillar', col: 22, row: 6,  sw: 1, sh: 1 },
-  // Torches on walls
-  { type: 'torch',  col: 1,  row: 3,  sw: 1, sh: 1 },
-  { type: 'torch',  col: 22, row: 3,  sw: 1, sh: 1 },
-  { type: 'torch',  col: 1,  row: 5,  sw: 1, sh: 1 },
-  { type: 'torch',  col: 22, row: 5,  sw: 1, sh: 1 },
-  // Firepits flanking Hermes' desk
-  { type: 'firepit', col: 4,  row: 5,  sw: 1, sh: 1 },
-  { type: 'firepit', col: 19, row: 5,  sw: 1, sh: 1 },
-  // Hermes' throne desk
-  { type: 'desk',  col: 10, row: 3,  sw: 2, sh: 1 },
-  { type: 'chair', col: 11, row: 4,  sw: 1, sh: 1 },
-  // Fire trees for atmosphere
-  { type: 'tree',  col: 5,  row: 1,  sw: 1, sh: 1 },
-  { type: 'tree',  col: 18, row: 1,  sw: 1, sh: 1 },
-  { type: 'tree',  col: 5,  row: 6,  sw: 1, sh: 1 },
-  { type: 'tree',  col: 18, row: 6,  sw: 1, sh: 1 },
+  { type: 'pillar', col: 1, row: 1, sw: 1, sh: 1 },
+  { type: 'pillar', col: 22, row: 1, sw: 1, sh: 1 },
+  { type: 'pillar', col: 1, row: 6, sw: 1, sh: 1 },
+  { type: 'pillar', col: 22, row: 6, sw: 1, sh: 1 },
+  // Wall decorations (torch_wall, painting, bulletin, clock)
+  { type: 'torch_wall', col: 1, row: 3, sw: 1, sh: 1 },
+  { type: 'torch_wall', col: 22, row: 3, sw: 1, sh: 1 },
+  { type: 'torch_wall', col: 1, row: 5, sw: 1, sh: 1 },
+  { type: 'torch_wall', col: 22, row: 5, sw: 1, sh: 1 },
+  { type: 'painting', col: 4, row: 0, sw: 1, sh: 1 }, // on wall
+  { type: 'painting', col: 19, row: 0, sw: 1, sh: 1 }, // on wall
+  { type: 'bulletin', col: 11, row: 0, sw: 1, sh: 1 }, // on wall
+  { type: 'clock', col: 11, row: 1, sw: 1, sh: 1 }, // on wall
+  // Firepits flanking Hermes
+  { type: 'firepit', col: 4, row: 5, sw: 1, sh: 1 },
+  { type: 'firepit', col: 19, row: 5, sw: 1, sh: 1 },
+  // Hermes' desk and chair (center)
+  { type: 'desk_v3', col: 10, row: 3, sw: 2, sh: 1 },
+  { type: 'chair_v3', col: 11, row: 4, sw: 1, sh: 1 },
+  { type: 'lamp', col: 12, row: 3, sw: 1, sh: 1 }, // on desk
+  // Bookshelves along side walls
+  { type: 'bookshelf', col: 2, row: 1, sw: 1, sh: 2 },
+  { type: 'bookshelf', col: 21, row: 1, sw: 1, sh: 2 },
+  // Plants in corners
+  { type: 'fern', col: 0, row: 6, sw: 1, sh: 1 },
+  { type: 'fern', col: 23, row: 6, sw: 1, sh: 1 },
+  { type: 'palm', col: 5, row: 1, sw: 1, sh: 1 },
+  { type: 'palm', col: 18, row: 1, sw: 1, sh: 1 },
+  // Carpet under Hermes' desk
+  { type: 'carpet_purple', col: 8, row: 2, sw: 6, sh: 3 },
 
-  // === The Pit (working desks) ===
-  { type: 'desk',  col: 1,  row: 10, sw: 2, sh: 1 },
-  { type: 'desk',  col: 4,  row: 10, sw: 2, sh: 1 },
-  { type: 'desk',  col: 7,  row: 10, sw: 2, sh: 1 },
-  { type: 'desk',  col: 10, row: 10, sw: 2, sh: 1 },
-  { type: 'chair', col: 1,  row: 11, sw: 1, sh: 1 },
-  { type: 'chair', col: 5,  row: 11, sw: 1, sh: 1 },
-  { type: 'chair', col: 7,  row: 11, sw: 1, sh: 1 },
-  { type: 'chair', col: 11, row: 11, sw: 1, sh: 1 },
-  // Plants/trees on side
-  { type: 'tree',  col: 0,  row: 16, sw: 1, sh: 1 },
-  { type: 'tree',  col: 13, row: 16, sw: 1, sh: 1 },
+  // === The Pit (rows 9-17, cols 0-13) ===
+  // Working desks with chairs (4 desks)
+  { type: 'desk_v3', col: 1, row: 10, sw: 2, sh: 1 },
+  { type: 'desk_v3', col: 4, row: 10, sw: 2, sh: 1 },
+  { type: 'desk_v3', col: 7, row: 10, sw: 2, sh: 1 },
+  { type: 'desk_v3', col: 10, row: 10, sw: 2, sh: 1 },
+  { type: 'chair_v3', col: 1, row: 11, sw: 1, sh: 1 },
+  { type: 'chair_v3', col: 5, row: 11, sw: 1, sh: 1 },
+  { type: 'chair_v3', col: 7, row: 11, sw: 1, sh: 1 },
+  { type: 'chair_v3', col: 11, row: 11, sw: 1, sh: 1 },
+  // Lamps on desks
+  { type: 'lamp', col: 2, row: 10, sw: 1, sh: 1 },
+  { type: 'lamp', col: 5, row: 10, sw: 1, sh: 1 },
+  { type: 'lamp', col: 8, row: 10, sw: 1, sh: 1 },
+  { type: 'lamp', col: 11, row: 10, sw: 1, sh: 1 },
+  // Utility furniture
+  { type: 'water_cooler', col: 0, row: 12, sw: 1, sh: 2 },
+  { type: 'vending_machine', col: 12, row: 12, sw: 1, sh: 1 },
+  { type: 'filing_cabinet', col: 0, row: 15, sw: 1, sh: 2 },
+  // Bookshelf on back wall
+  { type: 'bookshelf', col: 5, row: 9, sw: 1, sh: 2 },
+  // Wall decorations
+  { type: 'bulletin', col: 9, row: 9, sw: 1, sh: 1 },
+  { type: 'clock', col: 13, row: 9, sw: 1, sh: 1 },
+  // Plants on side
+  { type: 'fern', col: 0, row: 16, sw: 1, sh: 1 },
+  { type: 'palm', col: 13, row: 16, sw: 1, sh: 1 },
+  { type: 'flower', col: 13, row: 9, sw: 1, sh: 1 },
+  { type: 'cactus', col: 0, row: 9, sw: 1, sh: 1 },
   // Firepits in corners
   { type: 'firepit', col: 0, row: 14, sw: 1, sh: 1 },
   { type: 'firepit', col: 13, row: 14, sw: 1, sh: 1 },
+  // Carpet under desks
+  { type: 'carpet_red', col: 0, row: 10, sw: 14, sh: 2 },
 
-  // === Hell's Lounge (idle agents on couches) ===
+  // === Hell's Lounge (rows 9-17, cols 14-23) ===
+  // Couches
   { type: 'couch', col: 15, row: 11, sw: 2, sh: 1 },
   { type: 'couch', col: 19, row: 11, sw: 2, sh: 1 },
   { type: 'couch', col: 15, row: 15, sw: 2, sh: 1 },
   { type: 'couch', col: 19, row: 15, sw: 2, sh: 1 },
-  { type: 'tree',  col: 14, row: 9,  sw: 1, sh: 1 },
-  { type: 'tree',  col: 23, row: 9,  sw: 1, sh: 1 },
-  { type: 'tree',  col: 14, row: 17, sw: 1, sh: 1 },
-  { type: 'tree',  col: 23, row: 17, sw: 1, sh: 1 },
+  // Plants
+  { type: 'fern', col: 14, row: 9, sw: 1, sh: 1 },
+  { type: 'fern', col: 23, row: 9, sw: 1, sh: 1 },
+  { type: 'palm', col: 14, row: 17, sw: 1, sh: 1 },
+  { type: 'palm', col: 23, row: 17, sw: 1, sh: 1 },
+  { type: 'flower', col: 15, row: 9, sw: 1, sh: 1 },
+  { type: 'flower', col: 22, row: 9, sw: 1, sh: 1 },
+  { type: 'cactus', col: 15, row: 17, sw: 1, sh: 1 },
+  { type: 'cactus', col: 22, row: 17, sw: 1, sh: 1 },
+  // Firepits in corners
   { type: 'firepit', col: 14, row: 13, sw: 1, sh: 1 },
   { type: 'firepit', col: 23, row: 13, sw: 1, sh: 1 },
+  // Wall decorations
+  { type: 'torch_wall', col: 14, row: 11, sw: 1, sh: 1 },
+  { type: 'torch_wall', col: 23, row: 11, sw: 1, sh: 1 },
+  { type: 'painting', col: 18, row: 9, sw: 1, sh: 1 },
+  { type: 'clock', col: 18, row: 10, sw: 1, sh: 1 },
+  // Carpets under couch areas
+  { type: 'carpet_blue', col: 14, row: 10, sw: 10, sh: 6 },
+  { type: 'carpet_purple', col: 14, row: 14, sw: 10, sh: 3 },
 ]
 
 // Rocks scattered in the lava strip (row 8) for visual interest

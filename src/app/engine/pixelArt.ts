@@ -920,7 +920,407 @@ export const FURNITURE_TORCH: SpriteData = makeTorch()
 
 // === TILES ===
 
-// === NEW FURNITURE SPRITES T7-T14 ===
+// === NEW FURNITURE SPRITES T7-T14 (Phase A v3) ===
+
+// T7: Wooden desk (16x16) - wood grain, monitor, papers, lava inlay edge
+function makeDeskV3(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 16; i++) s.push(Array(16).fill(HELL_FIRE.barkMid))
+  // Wood grain (horizontal lines)
+  for (let y = 4; y < 12; y++) {
+    if (y % 3 === 0) {
+      for (let x = 0; x < 16; x++) s[y][x] = HELL_FIRE.barkDark
+    }
+  }
+  // Monitor (top-left, seen from above)
+  s[2][2] = HELL_FIRE.smokeDark; s[2][3] = HELL_FIRE.smokeLite; s[2][4] = HELL_FIRE.smokeDark
+  s[3][2] = HELL_FIRE.smokeLite; s[3][3] = HELL_FIRE.pureWhite; s[3][4] = HELL_FIRE.smokeLite
+  s[4][2] = HELL_FIRE.smokeDark; s[4][3] = HELL_FIRE.smokeLite; s[4][4] = HELL_FIRE.smokeDark
+  // Monitor glow
+  s[3][3] = HELL_FIRE.lavaGlow
+  // Papers (scattered, varied colors)
+  s[5][7] = HELL_FIRE.bone; s[5][8] = HELL_FIRE.bone
+  s[6][7] = HELL_FIRE.bone; s[6][8] = HELL_FIRE.bone
+  s[7][9] = HELL_FIRE.bone; s[7][10] = HELL_FIRE.bone
+  s[8][9] = HELL_FIRE.bone; s[8][10] = HELL_FIRE.bone
+  // Lava inlay (bottom edge)
+  s[13][2] = HELL_FIRE.lavaBright; s[13][3] = HELL_FIRE.lavaHot; s[13][4] = HELL_FIRE.lavaGlow
+  s[13][11] = HELL_FIRE.lavaGlow; s[13][12] = HELL_FIRE.lavaHot; s[13][13] = HELL_FIRE.lavaBright
+  s[14][2] = HELL_FIRE.lavaHot; s[14][3] = HELL_FIRE.lavaGlow; s[14][4] = HELL_FIRE.lavaHot
+  s[14][11] = HELL_FIRE.lavaHot; s[14][12] = HELL_FIRE.lavaGlow; s[14][13] = HELL_FIRE.lavaHot
+  // Desk edge highlight
+  for (let x = 0; x < 16; x++) s[12][x] = HELL_FIRE.barkMid
+  return s
+}
+
+// T8: Office swivel chair (8x8, 4 directions)
+function makeChairV3(direction: number): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 8; i++) s.push(Array(8).fill(_))
+  const dark = HELL_FIRE.cloth
+  const mid = HELL_FIRE.clothLite
+  const light = HELL_FIRE.bone
+  const wheel = HELL_FIRE.goldDark
+
+  if (direction === 0) { // DOWN - back rest, front seat, wheels below
+    // Back rest
+    s[0][2] = dark; s[0][3] = mid; s[0][4] = mid; s[0][5] = dark
+    s[1][2] = mid; s[1][3] = light; s[1][4] = light; s[1][5] = mid
+    // Seat
+    s[3][2] = mid; s[3][3] = light; s[3][4] = light; s[3][5] = mid
+    s[4][2] = dark; s[4][5] = dark
+    // Wheels
+    s[6][1] = wheel; s[6][6] = wheel
+    s[7][2] = wheel; s[7][5] = wheel
+  } else if (direction === 1) { // RIGHT - right armrest, right side, wheels on right
+    s[0][4] = dark; s[0][5] = mid; s[0][6] = mid
+    s[1][4] = mid; s[1][5] = light; s[1][6] = light
+    s[3][4] = mid; s[3][5] = light; s[3][6] = light
+    s[4][4] = dark
+    s[6][5] = wheel
+    s[7][6] = wheel
+  } else if (direction === 2) { // UP - seat from top, back of chair, wheels
+    s[2][2] = dark; s[2][3] = mid; s[2][4] = mid; s[2][5] = dark
+    s[3][2] = mid; s[3][3] = light; s[3][4] = light; s[3][5] = mid
+    s[5][1] = wheel; s[5][6] = wheel
+    s[6][2] = wheel; s[6][5] = wheel
+  } else { // LEFT - left armrest, left side, wheels on left
+    s[0][1] = mid; s[0][2] = mid; s[0][3] = dark
+    s[1][1] = light; s[1][2] = light; s[1][3] = mid
+    s[3][1] = light; s[3][2] = light; s[3][3] = mid
+    s[4][3] = dark
+    s[6][2] = wheel
+    s[7][1] = wheel
+  }
+  return s
+}
+
+export const CHAIR_V3: SpriteData[] = [0,1,2,3].map(d => makeChairV3(d))
+
+// T9: Desk lamp (8x8) - lamp shade, base, light cone (cone effect in renderer)
+function makeLamp(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 8; i++) s.push(Array(8).fill(_))
+  // Base
+  s[6][3] = HELL_FIRE.goldDark; s[6][4] = HELL_FIRE.goldDark
+  s[7][2] = HELL_FIRE.goldMid; s[7][3] = HELL_FIRE.goldBright; s[7][4] = HELL_FIRE.goldBright; s[7][5] = HELL_FIRE.goldMid
+  // Stem
+  s[3][3] = HELL_FIRE.goldMid; s[3][4] = HELL_FIRE.goldMid
+  s[4][3] = HELL_FIRE.goldMid; s[4][4] = HELL_FIRE.goldMid
+  s[5][3] = HELL_FIRE.goldMid; s[5][4] = HELL_FIRE.goldMid
+  // Shade
+  s[1][2] = HELL_FIRE.smokeLite; s[1][3] = HELL_FIRE.smokeMid; s[1][4] = HELL_FIRE.smokeMid; s[1][5] = HELL_FIRE.smokeLite
+  s[2][1] = HELL_FIRE.smokeMid; s[2][2] = HELL_FIRE.smokeLite; s[2][3] = HELL_FIRE.smokeLite; s[2][4] = HELL_FIRE.smokeLite; s[2][5] = HELL_FIRE.smokeLite; s[2][6] = HELL_FIRE.smokeMid
+  // Bulb glow
+  s[3][3] = HELL_FIRE.lavaGlow; s[3][4] = HELL_FIRE.lavaGlow
+  return s
+}
+
+// T10: Bookshelf (16x32) - vertical books, wooden frame
+function makeBookshelf(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 32; i++) s.push(Array(16).fill(HELL_FIRE.barkMid))
+  // Frame
+  s[0] = Array(16).fill(HELL_FIRE.barkDark)
+  s[31] = Array(16).fill(HELL_FIRE.barkDark)
+  for (let y = 0; y < 32; y++) { s[y][0] = HELL_FIRE.barkDark; s[y][15] = HELL_FIRE.barkDark }
+  // Shelves
+  s[8] = Array(16).fill(HELL_FIRE.barkDark)
+  s[16] = Array(16).fill(HELL_FIRE.barkDark)
+  s[24] = Array(16).fill(HELL_FIRE.barkDark)
+  // Books (varied colors and heights)
+  const bookColors = [HELL_FIRE.redMid, HELL_FIRE.lavaDeep, HELL_FIRE.goldMid, HELL_FIRE.stoneLite, HELL_FIRE.bone, HELL_FIRE.leafMid, HELL_FIRE.cloth, HELL_FIRE.redBright]
+  const bookPos = [
+    // Shelf 0 (rows 1-7)
+    [1,2,4], [2,2,5], [3,2,3], [4,2,6], [5,2,4], [6,2,5], [7,2,3],
+    // Shelf 1 (rows 9-15)
+    [1,9,6], [2,9,4], [3,9,5], [4,9,3], [5,9,6], [6,9,4], [7,9,5],
+    // Shelf 2 (rows 17-23)
+    [1,17,5], [2,17,3], [3,17,6], [4,17,4], [5,17,5], [6,17,3], [7,17,4],
+    // Shelf 3 (rows 25-30)
+    [1,25,4], [2,25,5], [3,25,6], [4,25,3], [5,25,5], [6,25,4],
+  ]
+  bookPos.forEach(([x, y, h], idx) => {
+    const color = bookColors[idx % bookColors.length]
+    for (let i = 0; i < h; i++) {
+      if (y + i < 32) s[y+i][x] = color
+    }
+  })
+  return s
+}
+
+// T11: Utility furniture
+function makeWaterCooler(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 16; i++) s.push(Array(8).fill(_))
+  // Base
+  s[14][1] = HELL_FIRE.smokeMid; s[14][2] = HELL_FIRE.smokeLite; s[14][3] = HELL_FIRE.smokeLite; s[14][4] = HELL_FIRE.smokeLite; s[14][5] = HELL_FIRE.smokeLite; s[14][6] = HELL_FIRE.smokeMid
+  s[15][1] = HELL_FIRE.smokeMid; s[15][2] = HELL_FIRE.smokeLite; s[15][3] = HELL_FIRE.smokeLite; s[15][4] = HELL_FIRE.smokeLite; s[15][5] = HELL_FIRE.smokeLite; s[15][6] = HELL_FIRE.smokeMid
+  // Bottle
+  for (let y = 2; y <= 13; y++) {
+    s[y][2] = HELL_FIRE.bone; s[y][3] = HELL_FIRE.lavaGlow; s[y][4] = HELL_FIRE.lavaGlow; s[y][5] = HELL_FIRE.bone
+  }
+  s[1][2] = HELL_FIRE.smokeMid; s[1][3] = HELL_FIRE.bone; s[1][4] = HELL_FIRE.bone; s[1][5] = HELL_FIRE.smokeMid
+  s[2][2] = HELL_FIRE.bone; s[2][3] = HELL_FIRE.lavaHot; s[2][4] = HELL_FIRE.lavaHot; s[2][5] = HELL_FIRE.bone
+  // Dispenser tap
+  s[10][6] = HELL_FIRE.goldMid
+  return s
+}
+
+function makeVendingMachine(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 16; i++) s.push(Array(16).fill(HELL_FIRE.smokeMid))
+  // Frame
+  s[0] = Array(16).fill(HELL_FIRE.smokeDark)
+  s[15] = Array(16).fill(HELL_FIRE.smokeDark)
+  for (let y = 0; y < 16; y++) { s[y][0] = HELL_FIRE.smokeDark; s[y][15] = HELL_FIRE.smokeDark }
+  // Glass front (center)
+  for (let y = 2; y <= 12; y++) {
+    for (let x = 3; x <= 12; x++) {
+      s[y][x] = HELL_FIRE.pureWhite
+    }
+  }
+  // Snacks inside (varied colors)
+  s[4][4] = HELL_FIRE.redBright; s[4][5] = HELL_FIRE.goldMid; s[4][6] = HELL_FIRE.leafMid
+  s[5][4] = HELL_FIRE.goldMid; s[5][5] = HELL_FIRE.redBright; s[5][6] = HELL_FIRE.bone
+  s[7][4] = HELL_FIRE.lavaDeep; s[7][5] = HELL_FIRE.goldMid; s[7][6] = HELL_FIRE.leafMid
+  s[8][4] = HELL_FIRE.leafMid; s[8][5] = HELL_FIRE.lavaBright; s[8][6] = HELL_FIRE.goldMid
+  s[10][4] = HELL_FIRE.goldMid; s[10][5] = HELL_FIRE.redBright; s[10][6] = HELL_FIRE.lavaBright
+  s[11][4] = HELL_FIRE.redBright; s[11][5] = HELL_FIRE.goldMid; s[11][6] = HELL_FIRE.leafMid
+  // Buttons
+  s[13][5] = HELL_FIRE.lavaHot; s[13][6] = HELL_FIRE.lavaHot; s[13][7] = HELL_FIRE.lavaHot
+  s[14][5] = HELL_FIRE.goldMid; s[14][6] = HELL_FIRE.goldMid; s[14][7] = HELL_FIRE.goldMid
+  return s
+}
+
+function makeFilingCabinet(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 16; i++) s.push(Array(8).fill(HELL_FIRE.smokeMid))
+  // Frame
+  s[0] = Array(8).fill(HELL_FIRE.smokeDark)
+  s[15] = Array(8).fill(HELL_FIRE.smokeDark)
+  for (let y = 0; y < 16; y++) { s[y][0] = HELL_FIRE.smokeDark; s[y][7] = HELL_FIRE.smokeDark }
+  // Drawers
+  for (let x = 2; x <= 5; x++) s[4][x] = HELL_FIRE.smokeLite
+  for (let x = 2; x <= 5; x++) s[9][x] = HELL_FIRE.smokeLite
+  for (let x = 2; x <= 5; x++) s[14][x] = HELL_FIRE.smokeLite
+  // Handles
+  s[4][6] = HELL_FIRE.goldMid
+  s[9][6] = HELL_FIRE.goldMid
+  s[14][6] = HELL_FIRE.goldMid
+  return s
+}
+
+// T12: Plant variants
+function makePlantFern(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 8; i++) s.push(Array(8).fill(_))
+  // Pot
+  s[5][2] = HELL_FIRE.stoneDark; s[5][3] = HELL_FIRE.stoneDark; s[5][4] = HELL_FIRE.stoneDark; s[5][5] = HELL_FIRE.stoneDark
+  s[6][2] = HELL_FIRE.stoneMid; s[6][3] = HELL_FIRE.stoneMid; s[6][4] = HELL_FIRE.stoneMid; s[6][5] = HELL_FIRE.stoneMid
+  s[7][3] = HELL_FIRE.stoneLite; s[7][4] = HELL_FIRE.stoneLite
+  // Fronds (green leaf colors)
+  s[0][3] = HELL_FIRE.leafMid; s[0][4] = HELL_FIRE.leafMid
+  s[1][2] = HELL_FIRE.leafBright; s[1][3] = HELL_FIRE.leafMid; s[1][4] = HELL_FIRE.leafMid; s[1][5] = HELL_FIRE.leafBright
+  s[2][1] = HELL_FIRE.leafMid; s[2][2] = HELL_FIRE.leafBright; s[2][3] = HELL_FIRE.leafBright; s[2][4] = HELL_FIRE.leafBright; s[2][5] = HELL_FIRE.leafMid; s[2][6] = HELL_FIRE.leafMid
+  s[3][1] = HELL_FIRE.leafMid; s[3][2] = HELL_FIRE.leafMid; s[3][5] = HELL_FIRE.leafMid; s[3][6] = HELL_FIRE.leafMid
+  s[4][2] = HELL_FIRE.leafDark; s[4][5] = HELL_FIRE.leafDark
+  return s
+}
+
+function makePlantPalm(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 8; i++) s.push(Array(8).fill(_))
+  // Pot
+  s[5][2] = HELL_FIRE.barkDark; s[5][3] = HELL_FIRE.barkDark; s[5][4] = HELL_FIRE.barkDark; s[5][5] = HELL_FIRE.barkDark
+  s[6][3] = HELL_FIRE.barkMid; s[6][4] = HELL_FIRE.barkMid
+  // Palm fronds (orange leaf colors)
+  s[0][3] = HELL_FIRE.leafBright; s[0][4] = HELL_FIRE.leafBright
+  s[1][1] = HELL_FIRE.leafMid; s[1][2] = HELL_FIRE.leafBright; s[1][3] = HELL_FIRE.leafGlow; s[1][4] = HELL_FIRE.leafGlow; s[1][5] = HELL_FIRE.leafBright; s[1][6] = HELL_FIRE.leafMid
+  s[2][0] = HELL_FIRE.leafDark; s[2][1] = HELL_FIRE.leafMid; s[2][6] = HELL_FIRE.leafMid; s[2][7] = HELL_FIRE.leafDark
+  s[3][0] = HELL_FIRE.leafDark; s[3][7] = HELL_FIRE.leafDark
+  return s
+}
+
+function makePlantFlower(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 8; i++) s.push(Array(8).fill(_))
+  // Pot
+  s[5][2] = HELL_FIRE.stoneDark; s[5][3] = HELL_FIRE.stoneDark; s[5][4] = HELL_FIRE.stoneDark; s[5][5] = HELL_FIRE.stoneDark
+  s[6][2] = HELL_FIRE.stoneMid; s[6][3] = HELL_FIRE.stoneMid; s[6][4] = HELL_FIRE.stoneMid; s[6][5] = HELL_FIRE.stoneMid
+  s[7][3] = HELL_FIRE.stoneLite; s[7][4] = HELL_FIRE.stoneLite
+  // Leaves
+  s[3][2] = HELL_FIRE.leafMid; s[3][3] = HELL_FIRE.leafMid; s[3][4] = HELL_FIRE.leafMid; s[3][5] = HELL_FIRE.leafMid
+  s[4][1] = HELL_FIRE.leafBright; s[4][2] = HELL_FIRE.leafMid; s[4][5] = HELL_FIRE.leafMid; s[4][6] = HELL_FIRE.leafBright
+  // Flowers (blooms)
+  s[1][3] = HELL_FIRE.lavaGlow; s[1][4] = HELL_FIRE.lavaGlow
+  s[2][2] = HELL_FIRE.lavaYellow; s[2][3] = HELL_FIRE.pureWhite; s[2][4] = HELL_FIRE.pureWhite; s[2][5] = HELL_FIRE.lavaYellow
+  return s
+}
+
+function makePlantCactus(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 8; i++) s.push(Array(8).fill(_))
+  // Pot
+  s[5][2] = HELL_FIRE.stoneDark; s[5][3] = HELL_FIRE.stoneDark; s[5][4] = HELL_FIRE.stoneDark; s[5][5] = HELL_FIRE.stoneDark
+  s[6][3] = HELL_FIRE.stoneMid; s[6][4] = HELL_FIRE.stoneMid
+  // Cactus body (green with spines)
+  s[2][3] = HELL_FIRE.leafMid; s[2][4] = HELL_FIRE.leafMid
+  s[3][2] = HELL_FIRE.leafMid; s[3][3] = HELL_FIRE.leafBright; s[3][4] = HELL_FIRE.leafBright; s[3][5] = HELL_FIRE.leafMid
+  s[4][2] = HELL_FIRE.leafMid; s[4][3] = HELL_FIRE.leafMid; s[4][4] = HELL_FIRE.leafMid; s[4][5] = HELL_FIRE.leafMid
+  s[5][3] = HELL_FIRE.leafMid; s[5][4] = HELL_FIRE.leafMid
+  // Spines (white dots)
+  s[2][3] = HELL_FIRE.pureWhite; s[2][4] = HELL_FIRE.pureWhite
+  s[3][2] = HELL_FIRE.pureWhite; s[3][5] = HELL_FIRE.pureWhite
+  s[4][2] = HELL_FIRE.pureWhite; s[4][5] = HELL_FIRE.pureWhite
+  s[5][3] = HELL_FIRE.pureWhite; s[5][4] = HELL_FIRE.pureWhite
+  return s
+}
+
+// T13: Wall decorations
+function makeClock(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 8; i++) s.push(Array(8).fill(_))
+  // Frame
+  const frame = HELL_FIRE.goldMid
+  const face = HELL_FIRE.bone
+  s[0][3] = frame; s[0][4] = frame
+  s[1][2] = frame; s[1][3] = face; s[1][4] = face; s[1][5] = frame
+  s[2][1] = frame; s[2][2] = face; s[2][3] = face; s[2][4] = face; s[2][5] = face; s[2][6] = frame
+  s[3][1] = frame; s[3][2] = face; s[3][3] = face; s[3][4] = face; s[3][5] = face; s[3][6] = frame
+  s[4][1] = frame; s[4][2] = face; s[4][3] = face; s[4][4] = face; s[4][5] = face; s[4][6] = frame
+  s[5][2] = frame; s[5][3] = face; s[5][4] = face; s[5][5] = frame
+  s[6][3] = frame; s[6][4] = frame
+  s[7][3] = frame; s[7][4] = frame
+  // Clock hands
+  s[3][3] = HELL_FIRE.smokeDark; s[4][4] = HELL_FIRE.smokeDark
+  s[2][4] = HELL_FIRE.goldBright
+  return s
+}
+
+function makePainting(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 16; i++) s.push(Array(16).fill(_))
+  // Frame
+  const frame = HELL_FIRE.goldMid
+  for (let x = 0; x < 16; x++) { s[0][x] = frame; s[15][x] = frame }
+  for (let y = 0; y < 16; y++) { s[y][0] = frame; s[y][15] = frame }
+  // Canvas (volcano scene)
+  const canvas = HELL_FIRE.stoneLite
+  const sky = HELL_FIRE.lavaBright
+  const volcano = HELL_FIRE.stoneDark
+  const lava = HELL_FIRE.lavaGlow
+  for (let y = 2; y <= 13; y++) {
+    for (let x = 2; x <= 13; x++) {
+      if (y <= 6) s[y][x] = sky
+      else if (y <= 10 && x >= 5 && x <= 10) s[y][x] = volcano
+      else if (y >= 10 && x >= 6 && x <= 9) s[y][x] = lava
+      else s[y][x] = canvas
+    }
+  }
+  return s
+}
+
+function makeBulletinBoard(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 16; i++) s.push(Array(16).fill(HELL_FIRE.barkMid))
+  // Frame
+  s[0] = Array(16).fill(HELL_FIRE.barkDark)
+  s[15] = Array(16).fill(HELL_FIRE.barkDark)
+  for (let y = 0; y < 16; y++) { s[y][0] = HELL_FIRE.barkDark; s[y][15] = HELL_FIRE.barkDark }
+  // Cork background (darker brown)
+  for (let y = 2; y <= 13; y++) {
+    for (let x = 2; x <= 13; x++) {
+      s[y][x] = HELL_FIRE.barkMid
+    }
+  }
+  // Papers (varied colors)
+  s[3][3] = HELL_FIRE.bone; s[3][4] = HELL_FIRE.bone
+  s[4][3] = HELL_FIRE.bone; s[4][4] = HELL_FIRE.bone
+  s[5][10] = HELL_FIRE.bone; s[5][11] = HELL_FIRE.bone
+  s[6][10] = HELL_FIRE.bone; s[6][11] = HELL_FIRE.bone
+  // Push pins
+  s[3][3] = HELL_FIRE.lavaBright; s[5][10] = HELL_FIRE.leafBright
+  return s
+}
+
+function makeTorchWall(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 8; i++) s.push(Array(8).fill(_))
+  // Bracket (mounted on wall)
+  s[5][3] = HELL_FIRE.goldDark; s[5][4] = HELL_FIRE.goldDark
+  s[6][2] = HELL_FIRE.goldMid; s[6][3] = HELL_FIRE.goldBright; s[6][4] = HELL_FIRE.goldBright; s[6][5] = HELL_FIRE.goldMid
+  // Flame (rows 0-4)
+  s[0][4] = HELL_FIRE.lavaGlow
+  s[1][3] = HELL_FIRE.lavaHot; s[1][4] = HELL_FIRE.lavaYellow; s[1][5] = HELL_FIRE.lavaHot
+  s[2][3] = HELL_FIRE.lavaBright; s[2][4] = HELL_FIRE.lavaWhite; s[2][5] = HELL_FIRE.lavaBright
+  s[3][2] = HELL_FIRE.lavaGlow; s[3][3] = HELL_FIRE.lavaYellow; s[3][4] = HELL_FIRE.lavaWhite; s[3][5] = HELL_FIRE.lavaYellow; s[3][6] = HELL_FIRE.lavaGlow
+  s[4][3] = HELL_FIRE.lavaDeep; s[4][4] = HELL_FIRE.lavaHot; s[4][5] = HELL_FIRE.lavaDeep
+  return s
+}
+
+// T14: Carpets/rugs (multi-tile sprites, stored as 2D arrays for placement)
+function makeCarpetRed16(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 16; i++) s.push(Array(16).fill(HELL_FIRE.redMid))
+  // Border
+  for (let x = 0; x < 16; x++) { s[0][x] = HELL_FIRE.redDark; s[15][x] = HELL_FIRE.redDark }
+  for (let y = 0; y < 16; y++) { s[y][0] = HELL_FIRE.redDark; s[y][15] = HELL_FIRE.redDark }
+  // Pattern (diamond center)
+  s[7][7] = HELL_FIRE.goldBright; s[7][8] = HELL_FIRE.goldBright
+  s[8][7] = HELL_FIRE.goldBright; s[8][8] = HELL_FIRE.goldBright
+  return s
+}
+
+function makeCarpetBlue16(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 16; i++) s.push(Array(16).fill(HELL_FIRE.lavaDeep))
+  for (let x = 0; x < 16; x++) { s[0][x] = HELL_FIRE.lavaDark; s[15][x] = HELL_FIRE.lavaDark }
+  for (let y = 0; y < 16; y++) { s[y][0] = HELL_FIRE.lavaDark; s[y][15] = HELL_FIRE.lavaDark }
+  // Geometric pattern
+  for (let x = 4; x < 12; x += 4) {
+    s[4][x] = HELL_FIRE.lavaBright; s[4][x+1] = HELL_FIRE.lavaBright
+    s[11][x] = HELL_FIRE.lavaBright; s[11][x+1] = HELL_FIRE.lavaBright
+  }
+  return s
+}
+
+function makeCarpetPurple32x16(): SpriteData {
+  const s: SpriteData = []
+  for (let i = 0; i < 16; i++) s.push(Array(32).fill(HELL_FIRE.stoneLite))
+  for (let x = 0; x < 32; x++) { s[0][x] = HELL_FIRE.stoneMid; s[15][x] = HELL_FIRE.stoneMid }
+  for (let y = 0; y < 16; y++) { s[y][0] = HELL_FIRE.stoneMid; s[y][31] = HELL_FIRE.stoneMid }
+  // Striped pattern
+  for (let x = 8; x < 24; x += 4) {
+    for (let y = 2; y < 14; y++) {
+      s[y][x] = HELL_FIRE.redBright
+      s[y][x+1] = HELL_FIRE.redMid
+    }
+  }
+  return s
+}
+
+// Export new furniture sprites
+export const FURNITURE_DESK_V3 = makeDeskV3()
+export const FURNITURE_CHAIR_V3 = CHAIR_V3
+export const FURNITURE_LAMP = makeLamp()
+export const FURNITURE_BOOKSHELF = makeBookshelf()
+export const FURNITURE_WATER_COOLER = makeWaterCooler()
+export const FURNITURE_VENDING_MACHINE = makeVendingMachine()
+export const FURNITURE_FILING_CABINET = makeFilingCabinet()
+export const FURNITURE_FERN = makePlantFern()
+export const FURNITURE_PALM = makePlantPalm()
+export const FURNITURE_FLOWER = makePlantFlower()
+export const FURNITURE_CACTUS = makePlantCactus()
+export const FURNITURE_CLOCK = makeClock()
+export const FURNITURE_PAINTING = makePainting()
+export const FURNITURE_BULLETIN = makeBulletinBoard()
+export const FURNITURE_TORCH_WALL = makeTorchWall()
+export const FURNITURE_CARPET_RED_16 = makeCarpetRed16()
+export const FURNITURE_CARPET_BLUE_16 = makeCarpetBlue16()
+export const FURNITURE_CARPET_PURPLE_32x16 = makeCarpetPurple32x16()
+
+// === TILES ===
 
 // === FLOOR TILE VARIANTS (16x16) ===
 
@@ -1272,6 +1672,30 @@ export const FURNITURE_SPRITES: Record<string, SpriteData> = {
   torch: FURNITURE_TORCH,
   tree: FIRE_TREE,
   rock: LAVA_ROCK,
+  // Phase A v3 (T7-T14)
+  desk_v3: FURNITURE_DESK_V3,
+  chair_v3: FURNITURE_CHAIR_V3[0], // Default direction 0
+  lamp: FURNITURE_LAMP,
+  bookshelf: FURNITURE_BOOKSHELF,
+  water_cooler: FURNITURE_WATER_COOLER,
+  vending_machine: FURNITURE_VENDING_MACHINE,
+  filing_cabinet: FURNITURE_FILING_CABINET,
+  fern: FURNITURE_FERN,
+  palm: FURNITURE_PALM,
+  flower: FURNITURE_FLOWER,
+  cactus: FURNITURE_CACTUS,
+  clock: FURNITURE_CLOCK,
+  painting: FURNITURE_PAINTING,
+  bulletin: FURNITURE_BULLETIN,
+  torch_wall: FURNITURE_TORCH_WALL,
+  carpet_red: FURNITURE_CARPET_RED_16,
+  carpet_blue: FURNITURE_CARPET_BLUE_16,
+  carpet_purple: FURNITURE_CARPET_PURPLE_32x16,
+}
+
+// Helper for directional chair sprites
+export function getChairV3Sprite(direction: number): SpriteData {
+  return FURNITURE_CHAIR_V3[direction % 4]
 }
 
 export function getFurnitureSprite(type: string): SpriteData {
