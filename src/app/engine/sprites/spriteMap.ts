@@ -6,7 +6,9 @@ import { FURNITURE_FIREPIT, FIRE_TREE as OLD_FIRE_TREE } from '../pixelArt'
 
 // Floor tiles
 import {
-  WOOD_PLANKS, STONE_TILE, CARPET_RED, CARPET_BLUE, CARPET_PURPLE,
+  WOOD_PLANKS, WOOD_PARQUET, WOOD_DARK,
+  STONE_TILE, STONE_COBBLE, STONE_SLATE,
+  CARPET_RED, CARPET_BLUE, CARPET_PURPLE, CARPET_GREEN, CARPET_GOLD,
 } from './tiles/floor'
 // Wall tiles
 import {
@@ -32,10 +34,16 @@ import { CHARACTERS, getCharacterFrame } from './characters'
 // === FLOOR ===
 export const FLOOR = {
   wood: WOOD_PLANKS,
+  wood_parquet: WOOD_PARQUET,
+  wood_dark: WOOD_DARK,
   stone: STONE_TILE,
+  stone_cobble: STONE_COBBLE,
+  stone_slate: STONE_SLATE,
   carpet_red: CARPET_RED,
   carpet_blue: CARPET_BLUE,
   carpet_purple: CARPET_PURPLE,
+  carpet_green: CARPET_GREEN,
+  carpet_gold: CARPET_GOLD,
 }
 
 // === WALLS ===
