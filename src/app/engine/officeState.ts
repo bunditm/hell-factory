@@ -179,6 +179,9 @@ export class OfficeState {
           (oldState !== 'error' && oldState !== 'error_critical')) {
         updated.shakeTimer = 500
       }
+      
+      // Rebuild bubble state to reflect the new state (FR-M7)
+      this.updateBubbleState(updated, update.state, oldState)
     }
     
     if (update.currentTool !== undefined) {
@@ -441,22 +444,36 @@ export class OfficeState {
     for (const [agentId, char] of this.characters.entries()) {
       if (!char.bubbleState || !char.bubbleState.visible) continue
       
-      // Check if bubble should auto-dismiss (1s after state transition)
-      if (char.bubbleState.dismissedAt !== null && now >= char.bubbleState.dismissedAt) {
-        const updated = { ...char, bubbleState: { ...char.bubbleState, visible: false } }
-        this.characters.set(agentId, updated)
-        changed = true
-        continue
+      // Build a single updated bubbleState that may include both anim-frame
+      // cycling AND auto-dismiss, since both can fire on the same tick.
+      const nextBubble: BubbleState = { ...char.bubbleState }
+      let charChanged = false
+      
+      // Update animation frame for cycling bubbles (thinking).
+      // Compute newAnimTimer from the current in-map value so the increment
+      // is never lost across iterations.
+      if (nextBubble.type === 'thinking') {
+        const newAnimTimer = nextBubble.animTimer + dt
+        if (newAnimTimer >= 500) {  // 500ms per frame
+          nextBubble.animFrame = (nextBubble.animFrame + 1) % 2
+          nextBubble.animTimer = newAnimTimer - 500  // preserve remainder
+          charChanged = true
+        } else {
+          nextBubble.animTimer = newAnimTimer
+          charChanged = true
+        }
       }
       
-      // Update animation frame for cycling bubbles (thinking)
-      if (char.bubbleState.type === 'thinking') {
-        char.bubbleState.animTimer += dt
-        if (char.bubbleState.animTimer >= 500) {  // 500ms per frame
-          const updated = { ...char, bubbleState: { ...char.bubbleState, animFrame: (char.bubbleState.animFrame + 1) % 2, animTimer: 0 } }
-          this.characters.set(agentId, updated)
-          changed = true
-        }
+      // Check if bubble should auto-dismiss (1s after state transition).
+      if (nextBubble.dismissedAt !== null && now >= nextBubble.dismissedAt) {
+        nextBubble.visible = false
+        charChanged = true
+      }
+      
+      if (charChanged) {
+        const updated = { ...char, bubbleState: nextBubble }
+        this.characters.set(agentId, updated)
+        changed = true
       }
     }
     
