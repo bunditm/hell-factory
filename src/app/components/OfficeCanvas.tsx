@@ -95,7 +95,9 @@ export default function OfficeCanvas() {
       render: (ctx) => {
         if (!isReady()) return
         const t = (performance.now() - startTime) / 1000
-        renderOfficeFrame(ctx, canvas.width, canvas.height, t)
+        // Pass live OfficeState characters so drawCharacter can render
+        // sub-agent shadows (FR-M2.4–M2.7).
+        renderOfficeFrame(ctx, canvas.width, canvas.height, t, officeState.getAllCharacters())
       },
     })
 

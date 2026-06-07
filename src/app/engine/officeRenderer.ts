@@ -578,10 +578,115 @@ function drawFurniturePiece(
   }
 }
 
+// Sub-agent shadow metadata consumed by drawSubAgentShadows.
+// Mirrors SubAgentInfo in officeState.ts (kept local so the renderer does not
+// depend on the state module's internals; any object with these fields works).
+interface SubAgentShadowInfo {
+  angle: number
+  distance: number
+  completedAt: number | null
+  state?: string
+  agentId?: string
+}
+
+/**
+ * Draw sub-agent "shadows" — faint silhouettes of the parent sprite flanking
+ * the parent character, one per active sub-agent. Each shadow is positioned
+ * in an arc around the parent (using the angle/distance computed by
+ * OfficeState.calculateSubAgentAngle), drawn at 50% scale and 30% alpha in a
+ * dark-gray tone. A faint 1px connector line links the parent to each
+ * shadow. Shadows whose `completedAt` is set are skipped (the state layer's
+ * cleanupExpiredSubAgents removes them entirely after 1s).
+ *
+ * Called from drawCharacter BEFORE the speech bubble so bubbles overlay the
+ * shadows. The parent sprite is drawn after this function inside drawCharacter,
+ * so the parent naturally covers the line endpoint at its feet.
+ *
+ * FR-M2.4–M2.7: sub-agent shadow rendering.
+ */
+function drawSubAgentShadows(
+  ctx: CanvasRenderingContext2D,
+  parentX: number,
+  parentY: number,
+  subAgents: ReadonlyMap<string, SubAgentShadowInfo>,
+  time: number,
+): void {
+  if (subAgents.size === 0) return
+
+  const parentCx = parentX + V4_TILE / 2
+  const parentCy = parentY + V4_TILE / 2
+
+  // Connector line styling — drawn first so shadows sit on top of the line
+  ctx.save()
+  ctx.strokeStyle = 'rgba(180, 180, 200, 0.3)'
+  ctx.lineWidth = 1
+  ctx.setLineDash([3, 3])
+  ctx.beginPath()
+
+  // Shadow sprite sizing: half the parent's normal render size (72 → 36),
+  // centered on the sub-agent's computed position.
+  const shadowSize = 36
+  const shadowOffsets: Array<{ x: number; y: number }> = []
+
+  for (const sub of subAgents.values()) {
+    if (sub.completedAt !== null) continue  // already finished; skip
+
+    // angle is measured in radians, with 0 = up; convert to canvas coords
+    // (y grows downward). angle:0 → directly above; angle:π → directly below.
+    const sx = parentCx + Math.sin(sub.angle) * sub.distance
+    const sy = parentCy - Math.cos(sub.angle) * sub.distance
+    shadowOffsets.push({ x: sx, y: sy })
+
+    // Line segment from parent center to shadow center
+    ctx.moveTo(parentCx, parentCy)
+    ctx.lineTo(sx, sy)
+  }
+  ctx.stroke()
+  ctx.setLineDash([])
+  ctx.restore()
+
+  // Draw each shadow as a dark-gray silhouette. We don't have a recolored
+  // sprite cached, so we approximate the silhouette with a soft dark circle
+  // + a translucent rectangle for the body. This stays cheap and avoids
+  // generating per-frame recolored sprite caches.
+  for (const { x: sx, y: sy } of shadowOffsets) {
+    ctx.save()
+    ctx.globalAlpha = 0.3
+
+    // Soft dark aura under the shadow
+    const auraGrad = ctx.createRadialGradient(sx, sy, 0, sx, sy, shadowSize * 0.8)
+    auraGrad.addColorStop(0, 'rgba(20, 20, 30, 0.9)')
+    auraGrad.addColorStop(1, 'rgba(20, 20, 30, 0)')
+    ctx.fillStyle = auraGrad
+    ctx.beginPath()
+    ctx.arc(sx, sy, shadowSize * 0.8, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Body silhouette — dark gray, half the parent's 72px render size
+    const bodyW = shadowSize * 0.7
+    const bodyH = shadowSize
+    ctx.fillStyle = '#1a1a24'
+    ctx.beginPath()
+    ctx.ellipse(sx, sy, bodyW / 2, bodyH / 2, 0, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Subtle pulsing core to make shadows feel alive
+    const pulse = 0.5 + 0.5 * Math.sin(time * 3 + sx * 0.01)
+    ctx.globalAlpha = 0.3 + pulse * 0.15
+    ctx.fillStyle = '#3a3a4a'
+    ctx.beginPath()
+    ctx.arc(sx, sy - bodyH * 0.15, bodyW * 0.25, 0, Math.PI * 2)
+    ctx.fill()
+
+    ctx.restore()
+  }
+}
+
 function drawCharacter(
   ctx: CanvasRenderingContext2D,
   ch: OfficeCharacter,
   time: number,
+  subAgents?: ReadonlyMap<string, SubAgentShadowInfo>,
 ): void {
   const room = ROOMS.find(r => r.id === ch.roomId)
   if (!room) return
@@ -597,6 +702,12 @@ function drawCharacter(
 
   const x = (room.col + ch.seatCol) * V4_TILE
   const y = (room.row + ch.seatRow) * V4_TILE + bounce
+
+  // Sub-agent shadows (FR-M2.4–M2.7) — drawn before the parent sprite so the
+  // parent covers the line endpoint at its feet.
+  if (subAgents && subAgents.size > 0) {
+    drawSubAgentShadows(ctx, x, y, subAgents, time)
+  }
 
   // Pick frame
   if (ch.spriteKey === 'hermes' && recoloredFrames['hermes-satan']) {
@@ -1034,11 +1145,22 @@ function drawBarkBubble(
 
 // ─── Main render entry ──────────────────────────────────────────────
 
+/**
+ * Minimal live-character shape needed by the renderer for sub-agent shadow
+ * drawing. Mirrors CanvasCharacter's x/y + subAgents surface; kept structural
+ * so the renderer does not need to import the OfficeState class.
+ */
+interface LiveCharacterShim {
+  agentId: string
+  subAgents: ReadonlyMap<string, SubAgentShadowInfo>
+}
+
 export function renderOfficeFrame(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
   time: number,
+  liveCharacters?: ReadonlyArray<LiveCharacterShim>,
 ): void {
   if (!ready) return  // wait for assets
 
@@ -1061,6 +1183,17 @@ export function renderOfficeFrame(
     drawFurniture(ctx, room, f, time)
   }
 
+  // Build a lookup from live agent → sub-agent map so drawCharacter can render
+  // sub-agent shadows for each parent. If no live state is provided (e.g. in
+  // unit tests, or before the first SSE snapshot), every character renders
+  // with an empty sub-agent map.
+  const liveById = new Map<string, LiveCharacterShim>()
+  if (liveCharacters) {
+    for (const lc of liveCharacters) {
+      liveById.set(lc.agentId, lc)
+    }
+  }
+
   // Draw characters (Z-sort by row + seatRow)
   const sortedChars = [...CHARACTERS].sort((a, b) => {
     const ra = ROOMS.find(r => r.id === a.roomId)
@@ -1068,7 +1201,8 @@ export function renderOfficeFrame(
     return ((ra?.row ?? 0) + a.seatRow) - ((rb?.row ?? 0) + b.seatRow)
   })
   for (const ch of sortedChars) {
-    drawCharacter(ctx, ch, time)
+    const live = liveById.get(ch.id)
+    drawCharacter(ctx, ch, time, live?.subAgents)
   }
 
   // Top status bar
