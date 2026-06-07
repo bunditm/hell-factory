@@ -15,10 +15,16 @@ const OfficeCanvas = dynamic(() => import('./components/OfficeCanvas'), {
   ),
 })
 
+// Perf overlay is dev-only and client-only
+const PerfOverlay = dynamic(() => import('./components/PerfOverlay'), {
+  ssr: false,
+})
+
 export default function Home() {
   return (
     <main className="relative w-screen overflow-hidden bg-[#0a0000]" style={{ height: '100vh' }}>
       <OfficeCanvas />
+      <PerfOverlay />
     </main>
   )
 }

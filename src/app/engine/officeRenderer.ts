@@ -662,8 +662,36 @@ function drawCharacter(
     ctx.globalAlpha = 1
   }
 
-  // Speech bubble
-  if (ch.bubble) {
+  // Speech bubble (FR-M7 - speech bubbles for agent states)
+  // Check for new bubble system first, fall back to legacy bubble string
+  if ((ch as any).bubbleState && (ch as any).bubbleState.visible) {
+    const bubbleState = (ch as any).bubbleState
+    const bubbleY = y - 40  // Above character head
+    
+    switch (bubbleState.type) {
+      case 'thinking':
+        drawThinkingBubble(ctx, x + V4_TILE / 2, bubbleY, bubbleState.animFrame)
+        break
+      case 'working':
+        drawWorkingBubble(ctx, x + V4_TILE / 2, bubbleY)
+        break
+      case 'waiting':
+        drawWaitingBubble(ctx, x + V4_TILE / 2, bubbleY)
+        break
+      case 'error':
+        drawErrorBubble(ctx, x + V4_TILE / 2, bubbleY, false)
+        break
+      case 'error_critical':
+        drawErrorBubble(ctx, x + V4_TILE / 2, bubbleY, true)
+        break
+      case 'bark':
+        // Bark needs target position (handled at a higher level)
+        // For now, just show the bubble without arrow
+        drawBarkBubble(ctx, x + V4_TILE / 2, bubbleY, x + V4_TILE / 2, y)
+        break
+    }
+  } else if (ch.bubble) {
+    // Legacy bubble rendering (fallback)
     drawSpeechBubble(ctx, ch.bubble, x + V4_TILE / 2, y + 8, isBarking)
   }
 
@@ -712,6 +740,296 @@ function drawSpeechBubble(
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText(text, cx, y + h / 2 - 2)
+}
+
+// ─── Speech bubble rendering (FR-M7) ─────────────────────────────────────
+
+/**
+ * Draw thinking bubble - "..." with 2-frame cycling animation
+ * FR-M7.1: small "..." bubble above character (cycles frames every 500ms)
+ */
+function drawThinkingBubble(
+  ctx: CanvasRenderingContext2D,
+  cx: number, cy: number,
+  animFrame: number,
+): void {
+  const padding = 8
+  const size = 36
+  const x = cx - size / 2
+  const y = cy
+
+  // Background - light gray/cream
+  ctx.fillStyle = '#ffeecc'
+  ctx.beginPath()
+  ctx.roundRect(x, y, size, size, 6)
+  ctx.fill()
+  ctx.strokeStyle = '#444'
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+  // Text "..." - cycling between 2 frames
+  ctx.fillStyle = '#333'
+  ctx.font = 'bold 18px monospace'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  
+  // Frame 0: "..." centered
+  // Frame 1: "..." shifted slightly (simulating thinking)
+  const yOffset = animFrame === 0 ? 0 : -2
+  ctx.fillText('...', cx, y + size / 2 + yOffset)
+
+  // Tail
+  ctx.beginPath()
+  ctx.moveTo(cx, y + size)
+  ctx.lineTo(cx - 4, y + size + 4)
+  ctx.lineTo(cx, y + size + 6)
+  ctx.lineTo(cx + 4, y + size + 4)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+}
+
+/**
+ * Draw working bubble - gear icon (semi-transparent)
+ * FR-M7.2: gear icon (small, semi-transparent, above head) - demoted to Should
+ */
+function drawWorkingBubble(
+  ctx: CanvasRenderingContext2D,
+  cx: number, cy: number,
+): void {
+  const size = 32
+  const x = cx - size / 2
+  const y = cy
+
+  ctx.save()
+  ctx.globalAlpha = 0.6  // Semi-transparent
+
+  // Draw gear
+  ctx.strokeStyle = '#ffcc00'
+  ctx.fillStyle = '#cc9900'
+  ctx.lineWidth = 2
+
+  const cx_g = cx
+  const cy_g = y + size / 2
+  const outerR = 12
+  const innerR = 6
+  const teeth = 6
+
+  ctx.beginPath()
+  for (let i = 0; i < teeth * 2; i++) {
+    const angle = (i * Math.PI) / teeth
+    const r = i % 2 === 0 ? outerR : innerR
+    const px = cx_g + Math.cos(angle) * r
+    const py = cy_g + Math.sin(angle) * r
+    if (i === 0) ctx.moveTo(px, py)
+    else ctx.lineTo(px, py)
+  }
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+
+  // Center hole
+  ctx.beginPath()
+  ctx.arc(cx_g, cy_g, 4, 0, Math.PI * 2)
+  ctx.fillStyle = '#000'
+  ctx.fill()
+
+  ctx.restore()
+}
+
+/**
+ * Draw waiting bubble - hourglass with ⚠ border (high contrast)
+ * FR-M7.3: hourglass bubble with ⚠ border (high contrast)
+ */
+function drawWaitingBubble(
+  ctx: CanvasRenderingContext2D,
+  cx: number, cy: number,
+): void {
+  const padding = 10
+  const size = 40
+  const x = cx - size / 2
+  const y = cy
+
+  // Background - bright yellow for high contrast
+  ctx.fillStyle = '#ffeeaa'
+  ctx.beginPath()
+  ctx.roundRect(x, y, size, size, 6)
+  ctx.fill()
+
+  // Warning border - thick ⚠ border for visibility
+  ctx.strokeStyle = '#ff6600'
+  ctx.lineWidth = 3
+  ctx.stroke()
+  
+  // Outer black border for contrast
+  ctx.strokeStyle = '#000'
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+  // Hourglass icon
+  ctx.strokeStyle = '#333'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  
+  // Top triangle
+  ctx.moveTo(cx, y + 12)
+  ctx.lineTo(cx - 8, y + 20)
+  ctx.lineTo(cx + 8, y + 20)
+  ctx.closePath()
+  ctx.stroke()
+  
+  // Bottom triangle
+  ctx.moveTo(cx, y + 28)
+  ctx.lineTo(cx - 8, y + 20)
+  ctx.lineTo(cx + 8, y + 20)
+  ctx.closePath()
+  ctx.stroke()
+
+  // ⚠ warning symbol
+  ctx.fillStyle = '#ff3300'
+  ctx.font = 'bold 12px monospace'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('⚠', cx, y + size - 8)
+
+  // Tail
+  ctx.beginPath()
+  ctx.moveTo(cx, y + size)
+  ctx.lineTo(cx - 4, y + size + 4)
+  ctx.lineTo(cx, y + size + 6)
+  ctx.lineTo(cx + 4, y + size + 4)
+  ctx.closePath()
+  ctx.fillStyle = '#ffeeaa'
+  ctx.fill()
+  ctx.strokeStyle = '#ff6600'
+  ctx.lineWidth = 3
+  ctx.stroke()
+}
+
+/**
+ * Draw error bubble - red ! bubble
+ * FR-M7.4: red ! bubble, character briefly shakes
+ */
+function drawErrorBubble(
+  ctx: CanvasRenderingContext2D,
+  cx: number, cy: number,
+  isCritical: boolean = false,
+): void {
+  const padding = 8
+  const size = 36
+  const x = cx - size / 2
+  const y = cy
+
+  // Background - red
+  ctx.fillStyle = '#ff3333'
+  ctx.beginPath()
+  ctx.roundRect(x, y, size, size, 6)
+  ctx.fill()
+
+  // Border - solid red for critical, dashed for minor
+  if (isCritical) {
+    ctx.strokeStyle = '#cc0000'
+    ctx.lineWidth = 3  // Solid red border for critical
+  } else {
+    ctx.strokeStyle = '#990000'
+    ctx.lineWidth = 2
+    ctx.setLineDash([4, 2])  // Dashed border for minor errors
+  }
+  ctx.stroke()
+  ctx.setLineDash([])  // Reset
+
+  // Outer black border
+  ctx.strokeStyle = '#000'
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+  // ! symbol
+  ctx.fillStyle = '#fff'
+  ctx.font = 'bold 24px monospace'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText('!', cx, y + size / 2 + 2)
+
+  // Tail
+  ctx.beginPath()
+  ctx.moveTo(cx, y + size)
+  ctx.lineTo(cx - 4, y + size + 4)
+  ctx.lineTo(cx, y + size + 6)
+  ctx.lineTo(cx + 4, y + size + 4)
+  ctx.closePath()
+  ctx.fillStyle = '#ff3333'
+  ctx.fill()
+  ctx.strokeStyle = '#cc0000'
+  ctx.lineWidth = isCritical ? 3 : 2
+  ctx.stroke()
+}
+
+/**
+ * Draw bark bubble - "DO THE WORK" with arrow
+ * FR-M7.6: "DO THE WORK" bubble with arrow pointing at target agent
+ */
+function drawBarkBubble(
+  ctx: CanvasRenderingContext2D,
+  cx: number, cy: number,
+  targetX: number, targetY: number,
+): void {
+  const padding = 8
+  const text = 'DO THE WORK!'
+  ctx.font = 'bold 12px monospace'
+  const textW = ctx.measureText(text).width
+  const w = textW + padding * 2
+  const h = 24
+  const x = cx - w / 2
+  const y = cy
+
+  // Background - bright orange
+  ctx.fillStyle = '#ff9900'
+  ctx.beginPath()
+  ctx.moveTo(x, y)
+  ctx.lineTo(x + w, y)
+  ctx.lineTo(x + w, y + h - 6)
+  ctx.lineTo(cx + 4, y + h - 2)
+  ctx.lineTo(cx, y + h)
+  ctx.lineTo(cx - 4, y + h - 2)
+  ctx.lineTo(x, y + h - 6)
+  ctx.closePath()
+  ctx.fill()
+  
+  // Border
+  ctx.strokeStyle = '#cc6600'
+  ctx.lineWidth = 2
+  ctx.stroke()
+
+  // Text
+  ctx.fillStyle = '#000'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(text, cx, y + h / 2 - 2)
+
+  // Arrow pointing to target
+  const arrowLen = 20
+  const angle = Math.atan2(targetY - cy, targetX - cx)
+  
+  ctx.strokeStyle = '#ff3300'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.moveTo(cx, y + h)
+  ctx.lineTo(cx + Math.cos(angle) * arrowLen, y + h + Math.sin(angle) * arrowLen)
+  ctx.stroke()
+  
+  // Arrowhead
+  ctx.beginPath()
+  ctx.moveTo(cx + Math.cos(angle) * arrowLen, y + h + Math.sin(angle) * arrowLen)
+  ctx.lineTo(
+    cx + Math.cos(angle - 0.5) * (arrowLen - 5),
+    y + h + Math.sin(angle - 0.5) * (arrowLen - 5)
+  )
+  ctx.moveTo(cx + Math.cos(angle) * arrowLen, y + h + Math.sin(angle) * arrowLen)
+  ctx.lineTo(
+    cx + Math.cos(angle + 0.5) * (arrowLen - 5),
+    y + h + Math.sin(angle + 0.5) * (arrowLen - 5)
+  )
+  ctx.stroke()
 }
 
 // ─── Main render entry ──────────────────────────────────────────────

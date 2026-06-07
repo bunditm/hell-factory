@@ -1,0 +1,60 @@
+{
+  "name": "hell-factory-monitoring",
+  "version": "0.1.0",
+  "description": "Real-time Hermes agent monitoring via SSE - visual office dashboard backend",
+  "entry": "dist/index.js",
+  "type": "module",
+  "hooks": ["activate", "deactivate"],
+  "permissions": {
+    "read": ["~/.hermes/state.db", "~/.hermes/sessions/**/*.jsonl"],
+    "eventBusSubscribe": ["state_change", "approval_request", "sub_agent_spawned", "sub_agent_completed"]
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "express": "^4.21.2",
+    "cors": "^2.8.5",
+    "js-yaml": "^4.1.0"
+  },
+  "configuration": {
+    "path": "config/default.yaml",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "pollingIntervalMs": {
+          "type": "number",
+          "default": 500,
+          "description": "How often to poll Hermes state.db for changes (ms)"
+        },
+        "sse": {
+          "type": "object",
+          "properties": {
+            "port": {
+              "type": "number",
+              "default": 3002,
+              "description": "Port for SSE server"
+            },
+            "host": {
+              "type": "string",
+              "enum": ["127.0.0.1"],
+              "default": "127.0.0.1",
+              "description": "SSE server bind address - MUST be 127.0.0.1 for security"
+            },
+            "maxConnections": {
+              "type": "number",
+              "default": 5,
+              "description": "Maximum concurrent SSE connections"
+            }
+          },
+          "required": ["port", "host"]
+        },
+        "trackedProfiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["hermes", "frontend-dev", "backend-dev", "devops", "qa-engineer"]
+        }
+      }
+    }
+  }
+}

@@ -1,8 +1,10 @@
 'use client'
 
-import { useRef, useEffect, useCallback, useState } from 'react'
+import { useRef, useEffect, useCallback, useState, useMemo } from 'react'
 import { startGameLoop } from '../engine/gameLoop'
 import { renderOfficeFrame, preloadAssets, isReady } from '../engine/officeRenderer'
+import { useMonitoringStore } from '../../lib/monitoring/monitoringStore'
+import { OfficeState } from '../engine/officeState'
 
 const ZOOM_DEFAULT = 1
 
@@ -10,6 +12,14 @@ export default function OfficeCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [assetsLoaded, setAssetsLoaded] = useState(false)
+  
+  // Office state manager (immutable, recreated when needed for memoization)
+  const officeState = useMemo(() => new OfficeState(), [])
+  
+  // Subscribe to monitoring store
+  const agents = useMonitoringStore((state) => state.agents)
+  const lastSnapshotAt = useMonitoringStore((state) => state.lastSnapshotAt)
+  const connectionState = useMonitoringStore((state) => state.connectionState)
 
   const resizeCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -39,6 +49,35 @@ export default function OfficeCanvas() {
     return () => { cancelled = true }
   }, [])
 
+  // Handle initial snapshot (applySnapshot in store)
+  // This effect runs when lastSnapshotAt changes, indicating a new snapshot
+  useEffect(() => {
+    if (!assetsLoaded || lastSnapshotAt === 0) return
+    
+    // Convert Map to array for replaceAll
+    const agentsArray = Array.from(agents.values())
+    officeState.replaceAll(agentsArray)
+    
+    console.log('[OfficeCanvas] Applied snapshot with', agentsArray.length, 'agents')
+  }, [assetsLoaded, lastSnapshotAt, agents, officeState])
+
+  // Handle agent updates (applyAgentUpdate in store)
+  // This effect runs when agents Map reference changes (Zustand shallow comparison)
+  useEffect(() => {
+    if (!assetsLoaded) return
+    
+    // We rely on the store to emit updates; the agents Map already has the latest state
+    // This effect is mainly for debugging / initialization
+    const agentsArray = Array.from(agents.values())
+    
+    // Check if we need to update (version check would be ideal but not available here)
+    // For now, just log updates
+    if (agentsArray.length > 0 && officeState.getVersion() === 0) {
+      officeState.replaceAll(agentsArray)
+      console.log('[OfficeCanvas] Initial sync with', agentsArray.length, 'agents')
+    }
+  }, [assetsLoaded, agents, officeState])
+
   useEffect(() => {
     if (!assetsLoaded) return
     const canvas = canvasRef.current
@@ -49,7 +88,10 @@ export default function OfficeCanvas() {
 
     const startTime = performance.now()
     const stop = startGameLoop(canvas, {
-      update: (_dt) => {},
+      update: (dt) => {
+        // Update bubble animations (FR-M7.11: auto-dismiss after 1s)
+        officeState.updateBubbleAnimations(dt)
+      },
       render: (ctx) => {
         if (!isReady()) return
         const t = (performance.now() - startTime) / 1000

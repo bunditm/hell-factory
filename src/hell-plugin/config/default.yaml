@@ -1,0 +1,50 @@
+# Hell Factory Monitoring Plugin Configuration
+
+# Polling interval in milliseconds (how often to check Hermes state.db)
+pollingIntervalMs: 500
+
+# SSE server configuration
+sse:
+  # Port to bind the SSE server to
+  port: 3002
+  # Bind address - MUST be 127.0.0.1 only for security
+  host: "127.0.0.1"
+  # Maximum concurrent SSE connections
+  maxConnections: 5
+
+# Agent profiles to track
+trackedProfiles:
+  - "hermes"
+  - "frontend-dev"
+  - "backend-dev"
+  - "devops"
+  - "qa-engineer"
+
+# Error detection keywords (case-insensitive)
+errorKeywords:
+  - "Error:"
+  - "Traceback"
+  - "panic:"
+  - "FATAL"
+
+# State thresholds (in milliseconds)
+stateThresholds:
+  # How long without activity before considering agent idle
+  idleTimeoutMs: 60000
+  # How long without tool call before transitioning from working to thinking
+  workingToThinkingMs: 3000
+  # How long an error_minor state persists before auto-clearing
+  errorMinorAutoClearMs: 10000
+  # How many errors within 60s to escalate to error_critical
+  errorCriticalThreshold: 3
+  errorCriticalWindowMs: 60000
+
+# Hermes bark configuration
+bark:
+  enabled: true
+  intervalMinutes: 5
+
+# Activity log configuration
+activityLog:
+  maxEntries: 1000
+  keepRecentForHealth: 100
